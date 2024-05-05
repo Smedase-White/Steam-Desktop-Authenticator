@@ -11,8 +11,6 @@
 
     <ItemGroup>
         <AvaloniaResource Include="Assets\**" />
-        <AvaloniaXaml Remove="Views\Main\MainView.axaml" />
-        <AvaloniaResource Include="Views\Main\MainView.axaml" />
     </ItemGroup>
 
     <ItemGroup>

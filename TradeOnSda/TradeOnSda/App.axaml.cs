@@ -6,7 +6,8 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 
 using TradeOnSda.Data;
-using TradeOnSda.Windows.Main;
+using TradeOnSda.ViewModels.Windows.Main;
+using TradeOnSda.Views.Windows.Main;
 
 namespace TradeOnSda;
 

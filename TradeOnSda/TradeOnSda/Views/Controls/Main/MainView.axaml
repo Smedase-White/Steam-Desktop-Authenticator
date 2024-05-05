@@ -1,0 +1,130 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:TradeOnSda.Views.Controls.Main"
+        xmlns:vm="using:TradeOnSda.ViewModels.Controls.Main"
+        xmlns:accountList="using:TradeOnSda.Views.Controls.AccountList">
+    <Design.PreviewWith>
+        <controls:MainView />
+    </Design.PreviewWith>
+    <Design.DataContext>
+        <vm:MainViewModel />
+    </Design.DataContext>
+
+    <Style Selector="Button.TopButton">
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="Margin" Value="5, 5, 5, 5" />
+        <Setter Property="FontSize" Value="11" />
+    </Style>
+
+    <Style Selector="controls|MainView">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid
+                    Margin="0, 20, 0, 0"
+                    RowDefinitions="40, 50, *, 30">
+                    <Grid Grid.Row="0" ColumnDefinitions="*, *, *">
+                        <Button Grid.Column="0" Classes="TopButton" Content="Import account"
+                                Command="{Binding ImportAccountsCommand}" />
+                        <Button Grid.Column="1" Classes="TopButton" Content="Add guard"
+                                Command="{Binding AddGuardCommand}" />
+                        <Button Grid.Column="2" Classes="TopButton"
+                                Classes.Default="{Binding !IsReLoginSuccess}"
+                                Classes.Success="{Binding IsReLoginSuccess}"
+                                Command="{Binding ReLoginCommand}"
+                                IsEnabled="{Binding IsAccountSelected}" />
+                    </Grid>
+                    <Grid Grid.Row="1">
+                        <Border
+                            Background="{DynamicResource BackgroundAccent}">
+                            <Grid
+                                ColumnDefinitions="*, 50">
+                                <ProgressBar
+                                    Grid.ColumnSpan="2"
+                                    Background="Transparent"
+                                    Foreground="Gray"
+                                    VerticalAlignment="Stretch"
+                                    IsIndeterminate="False"
+                                    IsVisible="{Binding IsAccountSelected}"
+                                    Value="{Binding ProgressValue}">
+                                </ProgressBar>
+                                <TextBlock
+                                    Grid.Column="0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontSize="18"
+                                    FontWeight="SemiBold"
+                                    Text="{Binding SteamGuardToken}" />
+                                <Button
+                                    Margin="0, 0, 5, 0"
+                                    Background="Transparent"
+                                    Grid.Column="1"
+                                    Command="{Binding CopySdaCodeCommand}">
+                                    <Svg
+                                        Path="/Assets/copy7.svg" />
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                    <Grid Grid.Row="2">
+                        <Grid
+                            RowDefinitions="40, *">
+                            <Grid
+                                Grid.Row="0">
+                                <TextBox
+                                    VerticalContentAlignment="Center"
+                                    Watermark="Search"
+                                    Margin="1, 2, 1, 1"
+                                    Text="{Binding SearchText}" />
+                            </Grid>
+                            <Grid
+                                Grid.Row="1">
+                                <accountList:AccountListView
+                                    DataContext="{Binding AccountListViewModel}" />
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                    <Grid
+                        Grid.Row="3"
+                        Background="{DynamicResource BackgroundAccent}">
+                        <Button
+                            Classes="Url"
+                            HorizontalAlignment="Left"
+                            Margin="10, 2, 0, 2"
+                            Content="About TradeOn"
+                            Command="{Binding AboutUsCommand}" />
+                        <Button
+                            Classes="Url"
+                            HorizontalAlignment="Right"
+                            Margin="0, 2, 10, 2"
+                            Content="{Binding VersionString}"
+                            Command="{Binding VersionCommand}" />
+                    </Grid>
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <Style Selector="Button.Url">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="CornerRadius" Value="5" />
+        <Setter Property="Foreground" Value="{DynamicResource TradeOnColor}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FontWeight" Value="Thin" />
+        <Setter Property="Padding" Value="5, 0, 5, 0" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+    </Style>
+
+    <Style Selector="Button.Default">
+        <Setter Property="Content" Value="Re-login" />
+    </Style>
+
+    <Style Selector="Button.Success">
+        <Setter Property="Foreground" Value="#40ee99" />
+        <Setter Property="Content" Value="Success" />
+    </Style>
+</Styles>

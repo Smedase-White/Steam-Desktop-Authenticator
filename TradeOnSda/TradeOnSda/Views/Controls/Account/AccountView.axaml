@@ -1,0 +1,252 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:TradeOnSda.Views.Controls.Account"
+        xmlns:vm="using:TradeOnSda.ViewModels.Controls.Account">
+    <Design.PreviewWith>
+        <controls:AccountView />
+    </Design.PreviewWith>
+    <Design.DataContext>
+        <vm:AccountViewModel />
+    </Design.DataContext>
+
+    <Style Selector="controls|AccountView">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Margin="2"
+                        CornerRadius="5"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        Background="{DynamicResource BackgroundAccent}">
+                    <Grid
+                        Height="50"
+                        ColumnDefinitions="*, 150">
+                        <Grid
+                            Grid.Column="0">
+                            <TextBlock Text="{Binding AccountName}"
+                                       VerticalAlignment="Center"
+                                       FontSize="15"
+                                       IsVisible="{Binding SelectedAccountViewCommandStrategy.IsVisibleLogin}"
+                                       Margin="10, 0, 0, 0"
+                                       FontWeight="SemiBold" />
+                            <TextBox
+                                Watermark="Proxy"
+                                VerticalContentAlignment="Center"
+                                IsVisible="{Binding SelectedAccountViewCommandStrategy.IsVisibleTextBox}"
+                                Text="{Binding SelectedAccountViewCommandStrategy.TextBoxText}"
+                                Margin="2, 4, 2, 4">
+                            </TextBox>
+                        </Grid>
+                        <Grid
+                            ColumnDefinitions="*, *, *"
+                            Grid.Column="1">
+                            <Button
+                                Grid.Column="0"
+                                Background="Transparent"
+                                Classes.AutoOn="{Binding AutoConfirm}"
+                                Classes.AutoOff="{Binding !AutoConfirm}"
+                                Command="{Binding ToggleAutoConfirmCommand}">
+                            </Button>
+                            <Button
+                                Background="Transparent"
+                                Classes="AccountRightButton"
+                                IsVisible="{Binding ProxyIconVisibility}"
+                                Classes.OkProxy="{Binding IsOkProxyState}"
+                                Classes.ErrorProxy="{Binding IsErrorProxyState}"
+                                Classes.UnknownProxy="{Binding IsUnknownProxyState}"
+                                Command="{Binding FirstCommand}"
+                                Grid.Column="1">
+                            </Button>
+                            <Button
+                                Grid.Column="1"
+                                Classes="SaveIcon AccountRightButton"
+                                Background="Transparent"
+                                IsVisible="{Binding SaveIconVisibility}"
+                                Command="{Binding FirstCommand}" />
+                            <Button
+                                Background="Transparent"
+                                Classes="AccountRightButton"
+                                Classes.ConfirmationsIcon="{Binding ConfirmationsIconVisibility}"
+                                Classes.RollbackIcon="{Binding RollbackIconVisibility}"
+                                Command="{Binding SecondCommand}"
+                                Grid.Column="2">
+                            </Button>
+                        </Grid>
+                    </Grid>
+                    <Border.ContextMenu>
+                        <ContextMenu
+                            IsOpen="{Binding IsContextMenuOpen, Mode=OneWayToSource}"
+                            Background="{DynamicResource BackgroundAccent}">
+                            <MenuItem
+                                StaysOpenOnClick="True"
+                                Background="{DynamicResource BackgroundAccent}">
+                                <MenuItem.Header>
+                                    <Grid ColumnDefinitions="150, *, 30">
+                                        <Grid Grid.Column="0">
+                                            <TextBlock
+                                                Margin="5, 0, 0, 0"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Text="Auto-confirm (sec): " />
+                                        </Grid>
+                                        <TextBox
+                                            VerticalContentAlignment="Center"
+                                            Margin="0, 0, 5, 0"
+                                            Text="{Binding AutoConfirmDelayText}"
+                                            Grid.Column="1" />
+                                        <Button
+                                            Grid.Column="2"
+                                            Padding="4"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Height="30"
+                                            Classes.DefaultSaveProxy="{Binding !IsSuccessCommitAutoConfirmDelay}"
+                                            Classes.SuccessSaveProxy="{Binding IsSuccessCommitAutoConfirmDelay}"
+                                            Command="{Binding CommitAutoConfirmDelayCommand}">
+                                        </Button>
+                                    </Grid>
+                                </MenuItem.Header>
+                            </MenuItem>
+                            <MenuItem
+                                Background="{DynamicResource BackgroundAccent}"
+                                Command="{Binding RemoveCommand}">
+                                <MenuItem.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="Remove"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center" />
+                                    </DataTemplate>
+                                </MenuItem.HeaderTemplate>
+                            </MenuItem>
+                        </ContextMenu>
+                    </Border.ContextMenu>
+                    <Interaction.Behaviors>
+                        <EventTriggerBehavior EventName="DoubleTapped">
+                            <!-- ReSharper disable once Xaml.PossibleNullReferenceException -->
+                            <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
+                            <InvokeCommandAction
+                                Command="{Binding DataContext.DoubleClickCommand, RelativeSource={RelativeSource AncestorType={x:Type controls:AccountView}}}" />
+                        </EventTriggerBehavior>
+                    </Interaction.Behaviors>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <Style Selector="Button.SaveIcon">
+        <Setter Property="Content">
+            <Setter.Value>
+                <Template>
+                    <Svg
+                        Path="/Assets/save2.svg" />
+                </Template>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <Style Selector="Button.OkProxy">
+        <Setter Property="Content">
+            <Setter.Value>
+                <Template>
+                    <Svg
+                        Path="/Assets/proxyGreen1.svg" />
+                </Template>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <Style Selector="Button.ErrorProxy">
+        <Setter Property="Content">
+            <Setter.Value>
+                <Template>
+                    <Svg
+                        Path="/Assets/proxyRed3.svg" />
+                </Template>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <Style Selector="Button.UnknownProxy">
+        <Setter Property="Content">
+            <Setter.Value>
+                <Template>
+                    <Svg
+                        Path="/Assets/proxy7.svg" />
+                </Template>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="Button.ConfirmationsIcon">
+        <Setter Property="Content">
+            <Setter.Value>
+                <Template>
+                    <Svg
+                        Path="/Assets/confirmations12.svg" />
+                </Template>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="Button.RollbackIcon">
+        <Setter Property="Content">
+            <Setter.Value>
+                <Template>
+                    <Svg
+                        Path="/Assets/rollback1.svg" />
+                </Template>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="Button.AutoOn">
+        <Setter Property="Content">
+            <Setter.Value>
+                <Template>
+                    <Svg
+                        Path="/Assets/autoOn5.svg" />
+                </Template>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="Button.AutoOff">
+        <Setter Property="Content">
+            <Setter.Value>
+                <Template>
+                    <Svg
+                        Path="/Assets/autoOn.svg" />
+                </Template>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="Button.AccountRightButton">
+        <Setter Property="Height" Value="45" />
+        <Setter Property="Width" Value="45" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    
+    <Style Selector="Button.DefaultSaveProxy">
+        <Setter Property="Content">
+            <Setter.Value>
+                <Template>
+                    <Svg Path="/Assets/save2.svg"></Svg>
+                </Template>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <Style Selector="Button.SuccessSaveProxy">
+        <Setter Property="Content">
+            <Setter.Value>
+                <Template>
+                    <Svg Path="/Assets/saveGreen1.svg"></Svg>
+                </Template>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</Styles>
