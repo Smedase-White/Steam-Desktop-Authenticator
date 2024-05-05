@@ -19,10 +19,23 @@
         <ApplicationManifest>app.manifest</ApplicationManifest>
     </PropertyGroup>
 
+    <PropertyGroup>
+      <BeautySharedRuntimeMode>False</BeautySharedRuntimeMode>
+      <BeautyLibsDir Condition="$(BeautySharedRuntimeMode) == 'True'">../libraries</BeautyLibsDir>
+      <BeautyLibsDir Condition="$(BeautySharedRuntimeMode) != 'True'">./libraries</BeautyLibsDir>
+      <DisableBeauty>False</DisableBeauty>
+      <BeautyOnPublishOnly>False</BeautyOnPublishOnly>
+      <BeautyNoRuntimeInfo>False</BeautyNoRuntimeInfo>
+      <BeautyEnableDebugging>False</BeautyEnableDebugging>
+      <BeautyUsePatch>True</BeautyUsePatch>
+      <BeautyLogLevel>Info</BeautyLogLevel>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="Avalonia.Desktop" Version="11.0.0-rc1.1" />
         <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.0-rc1.1" />
         <PackageReference Include="Dotnet.Bundle" Version="0.9.13" />
+        <PackageReference Include="nulastudio.NetBeauty" Version="2.1.4.4" />
     </ItemGroup>
 
     <ItemGroup>
