@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+
 using SteamAuthentication.Trades.Responses.Converters;
 
 namespace SteamAuthentication.Trades.Responses;
@@ -7,10 +8,10 @@ public class MyOrdersResponse
 {
     [JsonProperty("success", Required = Required.Always)]
     public bool Success { get; set; }
-    
+
     [JsonProperty("buy_orders")]
     public SteamBuyOrder[]? BuyOrders { get; set; }
-    
+
     [JsonProperty("total_count", Required = Required.Always)]
     public int TotalCount { get; set; }
 }

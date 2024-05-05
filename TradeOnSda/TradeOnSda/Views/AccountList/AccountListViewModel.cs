@@ -1,7 +1,9 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
+
 using Avalonia.Controls;
+
 using DynamicData;
 using DynamicData.Alias;
 using DynamicData.Binding;
@@ -52,21 +54,21 @@ public class AccountListViewModel : ViewModelBase
                 t.WhenPropertyChanged(vm => vm.IsVisible).Select(propertyValue => propertyValue.Value))
             .Bind(out _visibleAccounts)
             .Subscribe();
-        
+
         this.WhenPropertyChanged(t => t.SearchText)
             .Subscribe(valueWrapper =>
             {
-                var searchText = valueWrapper.Value;
-                
+                string? searchText = valueWrapper.Value;
+
                 // ReSharper disable once ConvertIfStatementToReturnStatement
                 if (string.IsNullOrWhiteSpace(SearchText))
                 {
-                    foreach (var account in AllAccounts) 
+                    foreach (AccountViewModel account in AllAccounts)
                         account.IsVisible = true;
                     return;
                 }
 
-                foreach (var account in AllAccounts)
+                foreach (AccountViewModel account in AllAccounts)
                     account.IsVisible = account.AccountName.ToLower().Contains(searchText!.ToLower());
             });
     }

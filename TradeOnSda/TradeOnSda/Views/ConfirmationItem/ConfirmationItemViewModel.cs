@@ -2,15 +2,21 @@ using System;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows.Input;
+
 using AsyncImageLoader;
+
 using Avalonia.Controls;
 using Avalonia.Media;
+
 using Humanizer;
+
 using ReactiveUI;
+
 using SteamAuthentication.Exceptions;
 using SteamAuthentication.Logic;
 using SteamAuthentication.LogicModels;
 using SteamAuthentication.Models;
+
 using TradeOnSda.ViewModels;
 using TradeOnSda.Views.Confirmations;
 using TradeOnSda.Windows.NotificationMessage;
@@ -20,7 +26,7 @@ namespace TradeOnSda.Views.ConfirmationItem;
 public class ConfirmationItemViewModel : ViewModelBase
 {
     private IImage? _userImage;
-    
+
     public SteamGuardAccount SteamGuardAccount { get; }
 
     public SdaConfirmation SdaConfirmation { get; }
@@ -49,17 +55,17 @@ public class ConfirmationItemViewModel : ViewModelBase
             _ => "",
         };
 
-        var creationTime = TimeHelpers.FromTimeStamp(sdaConfirmation.CreationTimeStamp);
-        var delta = DateTime.UtcNow - creationTime;
-        
-        var humanizedTime = delta.Humanize(2, new CultureInfo("en-US"));
+        DateTime creationTime = TimeHelpers.FromTimeStamp(sdaConfirmation.CreationTimeStamp);
+        TimeSpan delta = DateTime.UtcNow - creationTime;
+
+        string humanizedTime = delta.Humanize(2, new CultureInfo("en-US"));
         ConfirmationTime = humanizedTime + " ago";
 
         Task.Run(async () =>
         {
             if (sdaConfirmation.Icon != null)
             {
-                var bitmap = await ImageLoader.AsyncImageLoader.ProvideImageAsync(sdaConfirmation.Icon);
+                Avalonia.Media.Imaging.Bitmap? bitmap = await ImageLoader.AsyncImageLoader.ProvideImageAsync(sdaConfirmation.Icon);
                 UserImage = bitmap;
             }
         });
@@ -69,7 +75,7 @@ public class ConfirmationItemViewModel : ViewModelBase
             try
             {
                 await SteamGuardAccount.AcceptConfirmationAsync(SdaConfirmation);
-                
+
                 confirmationsViewModel.RemoveViewModel(this);
             }
             catch (RequestException e)
@@ -88,7 +94,7 @@ public class ConfirmationItemViewModel : ViewModelBase
             try
             {
                 await SteamGuardAccount.DenyConfirmationAsync(SdaConfirmation);
-                
+
                 confirmationsViewModel.RemoveViewModel(this);
             }
             catch (RequestException e)

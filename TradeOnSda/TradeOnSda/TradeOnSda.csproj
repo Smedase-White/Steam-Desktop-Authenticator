@@ -37,4 +37,9 @@
       <UpToDateCheckInput Remove="Assets\logo.ico" />
       <UpToDateCheckInput Remove="Assets\logo.png" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="ViewModels\AccountList\" />
+      <Folder Include="ViewModels\Account\" />
+    </ItemGroup>
 </Project>

@@ -1,4 +1,5 @@
 using System;
+
 using Newtonsoft.Json;
 
 namespace TradeOnSda.Data;
@@ -12,8 +13,8 @@ public class SavedSdaDto
     public string? ProxyString { get; set; }
 
     public bool AutoConfirm { get; set; }
-    
-    public TimeSpan AutoConfirmDelay { get; set; } 
+
+    public TimeSpan AutoConfirmDelay { get; set; }
 
     public SavedSdaDto(ulong steamId, string password, string? proxyString, bool autoConfirm, TimeSpan autoConfirmDelay)
     {

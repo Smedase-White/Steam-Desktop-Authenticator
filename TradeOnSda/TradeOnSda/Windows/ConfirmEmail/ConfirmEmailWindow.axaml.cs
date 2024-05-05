@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Avalonia;
+
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 
@@ -22,6 +22,6 @@ public partial class ConfirmEmailWindow : Window
         AvaloniaXamlLoader.Load(this);
     }
 
-    public static async Task ShowWindow(string email, Window ownerWindow) => 
+    public static async Task ShowWindow(string email, Window ownerWindow) =>
         await new ConfirmEmailWindow(email).ShowDialog(ownerWindow);
 }

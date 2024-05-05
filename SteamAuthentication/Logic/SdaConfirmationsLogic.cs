@@ -1,4 +1,5 @@
 using System.Collections.Specialized;
+
 using Microsoft.Extensions.Logging;
 
 namespace SteamAuthentication.Logic;
@@ -8,9 +9,9 @@ internal static class SdaConfirmationsLogic
     public static string GenerateConfirmationUrl(long timeStamp, string deviceId, string identitySecret,
         ulong steamId, string tag, ILogger logger)
     {
-        var endpoint = Endpoints.SteamCommunityUrl + "/mobileconf/getlist?";
+        string endpoint = Endpoints.SteamCommunityUrl + "/mobileconf/getlist?";
 
-        var queryString = GenerateConfirmationQueryParams(tag, deviceId, identitySecret, steamId, timeStamp, logger);
+        string queryString = GenerateConfirmationQueryParams(tag, deviceId, identitySecret, steamId, timeStamp, logger);
 
         return endpoint + queryString;
     }
@@ -21,7 +22,7 @@ internal static class SdaConfirmationsLogic
         if (string.IsNullOrEmpty(deviceId))
             throw new ArgumentException("Device Id is not present");
 
-        var queryParams =
+        NameValueCollection queryParams =
             GenerateConfirmationQueryParameters(tag, deviceId, identitySecret, steamId, timeStamp, logger);
 
         return "p=" + queryParams["p"] + "&a=" + queryParams["a"] + "&k=" + queryParams["k"] + "&t=" +
@@ -37,12 +38,9 @@ internal static class SdaConfirmationsLogic
         if (string.IsNullOrEmpty(deviceId))
             throw new ArgumentException("Device Id is not present");
 
-        var k = SteamGuardCodeGenerating.GenerateConfirmationHash(timeStamp, tag, identitySecret, logger);
-
-        if (k == null)
+        string? k = SteamGuardCodeGenerating.GenerateConfirmationHash(timeStamp, tag, identitySecret, logger) ??
             throw new ArgumentException("Cannot generate confirmation hash");
-
-        var result = new NameValueCollection
+        NameValueCollection result = new()
         {
             { "p", deviceId },
             { "a", steamId.ToString() },

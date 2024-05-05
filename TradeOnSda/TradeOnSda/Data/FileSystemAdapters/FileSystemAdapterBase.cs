@@ -10,16 +10,16 @@ public abstract class FileSystemAdapterBase : IFileSystemAdapter
 
     public async Task<string> ReadFileAsync(string relativePath, CancellationToken cancellationToken)
     {
-        var path = Path.Combine(GetBasePath(), relativePath);
+        string path = Path.Combine(GetBasePath(), relativePath);
 
         return await File.ReadAllTextAsync(path, cancellationToken);
     }
 
     public async Task WriteFileAsync(string relativePath, string content, CancellationToken cancellationToken)
     {
-        var path = Path.Combine(GetBasePath(), relativePath);
+        string path = Path.Combine(GetBasePath(), relativePath);
 
-        var directory = Path.GetDirectoryName(path)!;
+        string directory = Path.GetDirectoryName(path)!;
 
         if (!Directory.Exists(directory))
             Directory.CreateDirectory(directory);

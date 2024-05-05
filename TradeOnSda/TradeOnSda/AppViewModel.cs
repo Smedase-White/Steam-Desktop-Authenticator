@@ -1,7 +1,10 @@
 using System;
 using System.Windows.Input;
+
 using Avalonia.Controls;
+
 using ReactiveUI;
+
 using TradeOnSda.ViewModels;
 
 namespace TradeOnSda;
@@ -9,9 +12,9 @@ namespace TradeOnSda;
 public class AppViewModel : ViewModelBase
 {
     public Window? MainWindow { get; set; }
-    
+
     public ICommand OpenCommand { get; }
-    
+
     public ICommand ExitCommand { get; }
 
     public AppViewModel()
@@ -19,8 +22,8 @@ public class AppViewModel : ViewModelBase
         OpenCommand = ReactiveCommand.Create(() =>
         {
             MainWindow?.Show();
-            
-            if (MainWindow != null) 
+
+            if (MainWindow != null)
                 MainWindow.WindowState = WindowState.Normal;
         });
 

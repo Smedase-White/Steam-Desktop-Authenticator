@@ -1,11 +1,12 @@
 using System;
 using System.Collections.ObjectModel;
+
 using DynamicData;
 using DynamicData.Binding;
 
 namespace TradeOnSda.Data;
 
-public class ReactiveObservableCollection<T> 
+public class ReactiveObservableCollection<T>
     where T : class
 {
     // ReSharper disable once InconsistentNaming
@@ -15,7 +16,7 @@ public class ReactiveObservableCollection<T>
 
     public IObservable<IChangeSet<T>> ItemsConnection =>
         _items.ToObservableChangeSet();
-    
+
     public ReactiveObservableCollection()
     {
         _items = new ObservableCollectionExtended<T>();

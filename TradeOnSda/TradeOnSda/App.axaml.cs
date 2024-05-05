@@ -1,8 +1,10 @@
 using System;
 using System.Threading.Tasks;
+
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+
 using TradeOnSda.Data;
 using TradeOnSda.Windows.Main;
 
@@ -12,12 +14,12 @@ namespace TradeOnSda;
 public class App : Application
 {
     public AppViewModel AppViewModel { get; }
-    
+
     public App()
     {
         AppViewModel = new AppViewModel();
     }
-    
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -29,9 +31,9 @@ public class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var sdaManager = Task.Run(async () => await SdaManager.CreateSdaManagerAsync()).GetAwaiter().GetResult();
+            SdaManager sdaManager = Task.Run(async () => await SdaManager.CreateSdaManagerAsync()).GetAwaiter().GetResult();
 
-            var window = desktop.MainWindow = new MainWindow();
+            Avalonia.Controls.Window window = desktop.MainWindow = new MainWindow();
 
             AppViewModel.MainWindow = window;
 

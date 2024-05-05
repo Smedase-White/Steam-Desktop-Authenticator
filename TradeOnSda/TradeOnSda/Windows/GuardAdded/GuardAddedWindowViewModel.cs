@@ -1,7 +1,11 @@
 using System.Windows.Input;
+
 using Avalonia.Controls;
+
 using ReactiveUI;
+
 using SteamAuthentication.LogicModels;
+
 using TradeOnSda.Data;
 using TradeOnSda.ViewModels;
 
@@ -12,21 +16,21 @@ public class GuardAddedWindowViewModel : ViewModelBase
     public SteamGuardAccount SteamGuardAccount { get; }
 
     public string AccountName { get; }
-    
+
     public string? ProxyString { get; }
-    
+
     public bool IsVisibleProxy { get; }
-    
+
     public string RevocationCode { get; }
-    
+
     public string SteamId { get; }
 
     public ICommand OkCommand { get; }
-    
+
     public GuardAddedWindowViewModel(SteamGuardAccount steamGuardAccount, MaFileCredentials credentials, Window ownerWindow)
     {
         SteamGuardAccount = steamGuardAccount;
-        
+
         AccountName = SteamGuardAccount.MaFile.AccountName;
         ProxyString = credentials.ProxyString;
         IsVisibleProxy = credentials.ProxyString != null;

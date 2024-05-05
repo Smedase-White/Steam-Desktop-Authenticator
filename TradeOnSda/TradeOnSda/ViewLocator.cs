@@ -1,6 +1,8 @@
 using System;
+
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
+
 using TradeOnSda.ViewModels;
 
 namespace TradeOnSda;
@@ -12,9 +14,9 @@ public class ViewLocator : IDataTemplate
         if (data is null)
             return null;
 
-        var name = data.GetType().FullName!.Replace("ViewModel", "View");
-        
-        var type = Type.GetType(name);
+        string name = data.GetType().FullName!.Replace("ViewModel", "View");
+
+        Type? type = Type.GetType(name);
 
         if (type != null)
             return (Control)Activator.CreateInstance(type)!;

@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+
 using SteamAuthentication.Trades.Models;
 using SteamAuthentication.Trades.Responses.Converters;
 
@@ -81,7 +82,7 @@ public class ItemDescription
 
     [JsonProperty("descriptions")]
     public TypeDescription[]? Descriptions { get; private set; }
-    
+
     [JsonProperty("owner_descriptions")]
     public TypeDescription[]? OwnerDescriptions { get; private set; }
 

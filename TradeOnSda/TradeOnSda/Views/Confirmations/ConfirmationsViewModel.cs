@@ -2,11 +2,15 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Input;
+
 using Avalonia.Controls;
+
 using ReactiveUI;
+
 using SteamAuthentication.Exceptions;
 using SteamAuthentication.LogicModels;
 using SteamAuthentication.Models;
+
 using TradeOnSda.ViewModels;
 using TradeOnSda.Views.ConfirmationItem;
 using TradeOnSda.Windows.NotificationMessage;
@@ -19,9 +23,9 @@ public class ConfirmationsViewModel : ViewModelBase
     public SdaConfirmation[] SdaConfirmations { get; private set; }
 
     public ObservableCollection<ConfirmationItemViewModel> ConfirmationsViewModels { get; }
-    
+
     public ICommand AcceptAllCommand { get; }
-    
+
     public ICommand DenyAllCommand { get; }
 
     public bool IsNoConfirmations
@@ -46,15 +50,15 @@ public class ConfirmationsViewModel : ViewModelBase
         {
             try
             {
-                var newConfirmations = (await steamGuardAccount.FetchConfirmationAsync())
+                SdaConfirmation[] newConfirmations = (await steamGuardAccount.FetchConfirmationAsync())
                     .Where(t => t.ConfirmationType is ConfirmationType.Trade or ConfirmationType.MarketSellTransaction)
                     .ToArray();
 
                 SdaConfirmations = newConfirmations;
-                
+
                 ConfirmationsViewModels.Clear();
 
-                foreach (var confirmation in newConfirmations)
+                foreach (SdaConfirmation? confirmation in newConfirmations)
                     ConfirmationsViewModels.Add(new ConfirmationItemViewModel(steamGuardAccount, confirmation,
                         ownerWindow, this));
 
@@ -63,7 +67,7 @@ public class ConfirmationsViewModel : ViewModelBase
             catch (RequestException e)
             {
                 await NotificationsMessageWindow.ShowWindow(
-                    $"Error load confirmations, message: {e.Message}, httpStatusCode: {e.HttpStatusCode.ToString()}",
+                    $"Error load confirmations, message: {e.Message}, httpStatusCode: {e.HttpStatusCode}",
                     ownerWindow);
             }
             catch (Exception e)
@@ -79,14 +83,14 @@ public class ConfirmationsViewModel : ViewModelBase
             {
                 await steamGuardAccount.AcceptConfirmationsAsync(SdaConfirmations);
 
-                SdaConfirmations = Array.Empty<SdaConfirmation>();
-                
+                SdaConfirmations = [];
+
                 ConfirmationsViewModels.Clear();
             }
             catch (RequestException e)
             {
                 await NotificationsMessageWindow.ShowWindow(
-                    $"Error accept confirmations, message: {e.Message}, httpStatusCode: {e.HttpStatusCode.ToString()}",
+                    $"Error accept confirmations, message: {e.Message}, httpStatusCode: {e.HttpStatusCode}",
                     ownerWindow);
             }
             catch (Exception e)
@@ -102,14 +106,14 @@ public class ConfirmationsViewModel : ViewModelBase
             {
                 await steamGuardAccount.DenyConfirmationsAsync(SdaConfirmations);
 
-                SdaConfirmations = Array.Empty<SdaConfirmation>();
-                
+                SdaConfirmations = [];
+
                 ConfirmationsViewModels.Clear();
             }
             catch (RequestException e)
             {
                 await NotificationsMessageWindow.ShowWindow(
-                    $"Error deny confirmations, message: {e.Message}, httpStatusCode: {e.HttpStatusCode.ToString()}",
+                    $"Error deny confirmations, message: {e.Message}, httpStatusCode: {e.HttpStatusCode}",
                     ownerWindow);
             }
             catch (Exception e)

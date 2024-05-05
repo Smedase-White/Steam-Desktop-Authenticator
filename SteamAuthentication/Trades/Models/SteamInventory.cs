@@ -1,4 +1,5 @@
 using System.Collections;
+
 using SteamAuthentication.Trades.Responses;
 
 namespace SteamAuthentication.Trades.Models;
@@ -45,12 +46,12 @@ public class ItemProxyEnumerator : IEnumerator<ItemProxy>
     {
         get
         {
-            var (_, value) = _itemsEnumerator.Current;
+            (long _, InventoryItem value) = _itemsEnumerator.Current;
 
             ItemDescription? description = null;
 
-            var itemId = value.GetItemId();
-            
+            ItemId itemId = value.GetItemId();
+
             if (_inventory.ItemDescriptions.ContainsKey(itemId))
                 description = _inventory.ItemDescriptions[itemId];
 

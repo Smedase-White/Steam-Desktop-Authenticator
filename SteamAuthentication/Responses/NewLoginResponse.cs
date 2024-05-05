@@ -20,7 +20,7 @@ public class NewLoginResponse
 
     [JsonProperty("transfer_parameters")]
     public TransferParameters TransferParameters { get; set; }
-    
+
     [JsonProperty("message")]
     public string Message { get; set; }
 }

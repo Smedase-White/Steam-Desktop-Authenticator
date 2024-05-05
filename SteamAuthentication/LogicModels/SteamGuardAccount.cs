@@ -1,13 +1,17 @@
 using System.Net;
-using System.Security.Cryptography;
 using System.Text;
+
 using Microsoft.Extensions.Logging;
+
 using Newtonsoft.Json;
+
 using RestSharp;
+
 using SteamAuthentication.Exceptions;
 using SteamAuthentication.Logic;
 using SteamAuthentication.Models;
 using SteamAuthentication.Responses;
+
 using SteamKit2;
 using SteamKit2.Authentication;
 
@@ -38,7 +42,7 @@ public class SteamGuardAccount
 
     public async Task<string> GenerateSteamGuardCodeForTimeStampAsync(CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
         long timeStamp;
 
@@ -58,7 +62,7 @@ public class SteamGuardAccount
 
         try
         {
-            var code = SteamGuardCodeGenerating.GenerateSteamGuardCode(MaFile.SharedSecret, timeStamp, _logger);
+            string code = SteamGuardCodeGenerating.GenerateSteamGuardCode(MaFile.SharedSecret, timeStamp, _logger);
 
             _logger.LogDebug("Steam guard got, code: {code}", code);
 
@@ -79,9 +83,9 @@ public class SteamGuardAccount
 
     public async Task<SdaConfirmation[]> FetchConfirmationAsync(CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
-        var url = SdaConfirmationsLogic.GenerateConfirmationUrl(
+        string url = SdaConfirmationsLogic.GenerateConfirmationUrl(
             await SteamTime.GetCurrentSteamTimeAsync(cancellationToken),
             MaFile.DeviceId,
             MaFile.IdentitySecret,
@@ -91,7 +95,7 @@ public class SteamGuardAccount
 
         _logger.LogDebug("Created url: {url}", url);
 
-        var cookies = MaFile.Session.CreateCookies();
+        CookieContainer cookies = MaFile.Session.CreateCookies();
 
         _logger.LogDebug("Created cookies: {cookies}", cookies.ToJson());
 
@@ -119,16 +123,12 @@ public class SteamGuardAccount
         if (response.RawBytes == null)
             throw new RequestException("RawBytes is null", response.StatusCode, null, null);
 
-        var content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
+        string content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
 
         try
         {
-            var confirmationsResponse = JsonConvert.DeserializeObject<SdaConfirmationsResponse>(content);
-
-            if (confirmationsResponse == null)
-                throw new RequestException("Response parse result is null or not success", response.StatusCode, content,
-                    null);
-
+            SdaConfirmationsResponse? confirmationsResponse = JsonConvert.DeserializeObject<SdaConfirmationsResponse>(content) ??
+                throw new RequestException("Response parse result is null or not success", response.StatusCode, content, null);
             if (!confirmationsResponse.Success)
             {
                 if (confirmationsResponse.IsNeedAuth)
@@ -160,7 +160,7 @@ public class SteamGuardAccount
     public async Task AcceptConfirmationAsync(SdaConfirmation confirmation,
         CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
         await ProcessConfirmationAsync(confirmation, "allow",
             await SteamTime.GetCurrentSteamTimeAsync(cancellationToken), cancellationToken);
@@ -173,7 +173,7 @@ public class SteamGuardAccount
     public async Task AcceptConfirmationsAsync(SdaConfirmation[] confirmations,
         CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
         await ProcessConfirmationsAsync(confirmations, "allow",
             await SteamTime.GetCurrentSteamTimeAsync(cancellationToken), cancellationToken);
@@ -185,7 +185,7 @@ public class SteamGuardAccount
 
     public async Task DenyConfirmationAsync(SdaConfirmation confirmation, CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
         await ProcessConfirmationAsync(confirmation, "cancel",
             await SteamTime.GetCurrentSteamTimeAsync(cancellationToken),
@@ -199,7 +199,7 @@ public class SteamGuardAccount
     public async Task DenyConfirmationsAsync(SdaConfirmation[] confirmations,
         CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
         await ProcessConfirmationsAsync(confirmations, "cancel",
             await SteamTime.GetCurrentSteamTimeAsync(cancellationToken), cancellationToken);
@@ -212,9 +212,9 @@ public class SteamGuardAccount
             "Start processing confirmations, count: {confirmationsCount}, tag: {tag}, timestamp: {timeStamp}",
             confirmations.Length, tag, timestamp);
 
-        var url = Endpoints.SteamCommunityUrl + "/mobileconf/multiajaxop";
+        string url = Endpoints.SteamCommunityUrl + "/mobileconf/multiajaxop";
 
-        var queryString = new StringBuilder();
+        StringBuilder queryString = new();
 
         queryString.Append("op=" + tag + "&");
 
@@ -224,12 +224,12 @@ public class SteamGuardAccount
             timestamp,
             _logger));
 
-        foreach (var confirmation in confirmations)
+        foreach (SdaConfirmation confirmation in confirmations)
             queryString.Append("&cid[]=" + confirmation.Id + "&ck[]=" + confirmation.Key);
 
         _logger.LogDebug("Result url: {url}", url);
 
-        var cookies = MaFile.Session.CreateCookies();
+        CookieContainer cookies = MaFile.Session.CreateCookies();
 
         _logger.LogDebug("Cookies: {cookies}", cookies.ToJson());
 
@@ -258,15 +258,12 @@ public class SteamGuardAccount
         if (response.RawBytes == null)
             throw new RequestException("RawBytes is null", response.StatusCode, null, null);
 
-        var content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
+        string content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
 
         try
         {
-            var processConfirmationResponse = JsonConvert.DeserializeObject<ProcessConfirmationResponse>(content);
-
-            if (processConfirmationResponse == null)
+            ProcessConfirmationResponse? processConfirmationResponse = JsonConvert.DeserializeObject<ProcessConfirmationResponse>(content) ??
                 throw new RequestException("Response parse result is null", response.StatusCode, content, null);
-
             if (!processConfirmationResponse.Success)
                 throw new Exception("ConfirmationResponse is false");
         }
@@ -287,9 +284,9 @@ public class SteamGuardAccount
         _logger.LogDebug("Start processing confirmation, id: {confirmationId}, tag: {tag}, timestamp: {timeStamp}",
             confirmation.Id, tag, timestamp);
 
-        var url = Endpoints.SteamCommunityUrl + "/mobileconf/ajaxop";
+        string url = Endpoints.SteamCommunityUrl + "/mobileconf/ajaxop";
 
-        var queryString = "?op=" + tag + "&";
+        string queryString = "?op=" + tag + "&";
 
         queryString += SdaConfirmationsLogic.GenerateConfirmationQueryParams(tag, MaFile.DeviceId,
             MaFile.IdentitySecret,
@@ -303,7 +300,7 @@ public class SteamGuardAccount
 
         _logger.LogDebug("Result url: {url}", url);
 
-        var cookies = MaFile.Session.CreateCookies();
+        CookieContainer cookies = MaFile.Session.CreateCookies();
 
         _logger.LogDebug("Cookies: {cookies}", cookies.ToJson());
 
@@ -331,15 +328,12 @@ public class SteamGuardAccount
         if (response.RawBytes == null)
             throw new RequestException("RawBytes is null", response.StatusCode, null, null);
 
-        var content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
+        string content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
 
         try
         {
-            var processConfirmationResponse = JsonConvert.DeserializeObject<ProcessConfirmationResponse>(content);
-
-            if (processConfirmationResponse == null)
+            ProcessConfirmationResponse? processConfirmationResponse = JsonConvert.DeserializeObject<ProcessConfirmationResponse>(content) ??
                 throw new RequestException("Response parse result is null", response.StatusCode, content, null);
-
             if (!processConfirmationResponse.Success)
                 throw new Exception("ConfirmationResponse is false");
         }
@@ -373,45 +367,40 @@ public class SteamGuardAccount
     public async Task<string?> LoginAgainAsync(string username, string password,
         CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
-        var configuration = SteamConfiguration.Create(builder => builder.WithHttpClientFactory(
+        SteamConfiguration configuration = SteamConfiguration.Create(builder => builder.WithHttpClientFactory(
                 () =>
                 {
-                    var httpClientHandler = new HttpClientHandler
-                    {
-                        Proxy = RestClient.Proxy,
-                    };
-
-                    var client = new HttpClient(httpClientHandler);
-
+                    HttpClientHandler httpClientHandler = new() { Proxy = RestClient.Proxy };
+                    HttpClient client = new(httpClientHandler);
                     return client;
                 })
             .WithProtocolTypes(ProtocolTypes.WebSocket));
 
 
-        var steamClient = new SteamClient(configuration);
-        var manager = new CallbackManager(steamClient);
-        var tks = new TaskCompletionSource();
+        SteamClient steamClient = new(configuration);
+        CallbackManager manager = new(steamClient);
+        TaskCompletionSource tks = new();
 
-        var cts = new CancellationTokenSource(TimeSpan.FromMinutes(1));
-        var ct = cts.Token;
+        CancellationTokenSource cts = new(TimeSpan.FromMinutes(1));
+        CancellationToken ct = cts.Token;
 
         manager.Subscribe<SteamClient.ConnectedCallback>(_ =>
         {
             cts.Cancel();
             tks.SetResult();
         });
-        
-        var steamUser = steamClient.GetHandler<SteamUser>()!;
 
-        var connectTask = tks.Task;
+        SteamUser steamUser = steamClient.GetHandler<SteamUser>()!;
+
+        Task connectTask = tks.Task;
 
         steamClient.ConnectWithProxy(null, RestClient.Proxy);
 
         try
         {
-            var __ = Task.Run(() =>
+            Task __ = Task.Run(() =>
             {
                 while (true)
                 {
@@ -429,7 +418,7 @@ public class SteamGuardAccount
 
             await connectTask;
 
-            var authSession = await steamClient.Authentication.BeginAuthSessionViaCredentialsAsync(
+            CredentialsAuthSession authSession = await steamClient.Authentication.BeginAuthSessionViaCredentialsAsync(
                 new AuthSessionDetails
                 {
                     Username = username,
@@ -438,7 +427,7 @@ public class SteamGuardAccount
                     Authenticator = new SteamGuardAuthenticator(this),
                 });
 
-            var pollResponse = await authSession.PollingWaitForResultAsync(cancellationToken);
+            AuthPollResult pollResponse = await authSession.PollingWaitForResultAsync(cancellationToken);
 
             steamUser.LogOn(new SteamUser.LogOnDetails
             {
@@ -446,12 +435,12 @@ public class SteamGuardAccount
                 AccessToken = pollResponse.RefreshToken,
             });
 
-            var steamId = authSession.SteamID.ConvertToUInt64();
-            var steamLoginSecure = steamId + "%7C%7C" + pollResponse.AccessToken;
+            ulong steamId = authSession.SteamID.ConvertToUInt64();
+            string steamLoginSecure = steamId + "%7C%7C" + pollResponse.AccessToken;
 
-            var newSession = new SteamSessionData(steamClient.ID, steamLoginSecure, steamId);
+            SteamSessionData newSession = new(steamClient.ID, steamLoginSecure, steamId);
 
-            var newMaFile = new SteamMaFile(
+            SteamMaFile newMaFile = new(
                 MaFile.SharedSecret,
                 MaFile.SerialNumber,
                 MaFile.RevocationCode,
@@ -483,18 +472,15 @@ public class SteamGuardAccount
     public static SteamGuardAccount Create(string maFileContent, SteamRestClient steamRestClient,
         ISteamTime steamTime, ILogger<SteamGuardAccount> logger)
     {
-        var steamMaFile = JsonConvert.DeserializeObject<SteamMaFile>(maFileContent);
-
-        if (steamMaFile == null)
+        SteamMaFile? steamMaFile = JsonConvert.DeserializeObject<SteamMaFile>(maFileContent) ??
             throw new DeserializeException("Error deserialize SteamMaFile, result is null");
-
         return new SteamGuardAccount(steamMaFile, steamRestClient, steamTime, logger);
     }
 
     public static async Task<SteamGuardAccount> CreateAsync(string maFilePath, SteamRestClient steamRestClient,
         ISteamTime steamTime, ILogger<SteamGuardAccount> logger, CancellationToken cancellationToken = default)
     {
-        var json = await File.ReadAllTextAsync(maFilePath, cancellationToken);
+        string json = await File.ReadAllTextAsync(maFilePath, cancellationToken);
 
         return Create(json, steamRestClient, steamTime, logger);
     }

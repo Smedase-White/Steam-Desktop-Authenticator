@@ -2,15 +2,21 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Input;
+
 using Avalonia.Controls;
 using Avalonia.Threading;
+
 using Microsoft.Extensions.Logging.Abstractions;
+
 using ReactiveUI;
+
 using SteamAuthentication.Exceptions;
 using SteamAuthentication.GuardLinking;
 using SteamAuthentication.LogicModels;
 using SteamAuthentication.Models;
+
 using SteamKit2.Authentication;
+
 using TradeOnSda.Data;
 using TradeOnSda.ViewModels;
 using TradeOnSda.Windows.ConfirmEmail;
@@ -219,13 +225,13 @@ public class AddGuardViewModel : ViewModelBase
             {
                 try
                 {
-                    var linkingResult = await _guardLinker.StartLinkingGuardAsync();
+                    (CredentialsAuthSession authSession, AuthPollResult pollResponse, ulong steamId) = await _guardLinker.StartLinkingGuardAsync();
 
-                    AccountName = linkingResult.pollResponse.AccountName;
-                    SteamIdString = linkingResult.steamId.ToString();
+                    AccountName = pollResponse.AccountName;
+                    SteamIdString = steamId.ToString();
 
-                    _pollResult = linkingResult.pollResponse;
-                    _steamId = linkingResult.steamId;
+                    _pollResult = pollResponse;
+                    _steamId = steamId;
 
                     IsAskStep = false;
                     IsFirstStep = false;
@@ -276,7 +282,7 @@ public class AddGuardViewModel : ViewModelBase
         {
             try
             {
-                var maFile = await _guardLinker!.SendAddGuardRequestAsync(_steamId!.Value, _pollResult!);
+                SteamMaFile maFile = await _guardLinker!.SendAddGuardRequestAsync(_steamId!.Value, _pollResult!);
 
                 _maFile = maFile;
 
@@ -297,7 +303,7 @@ public class AddGuardViewModel : ViewModelBase
                     try
                     {
                         await _guardLinker!.ConfirmPhoneNumberAsync(_pollResult!.AccessToken);
-                        
+
                         IsSecondTry = true;
                     }
                     catch (RequestException e)
@@ -313,7 +319,7 @@ public class AddGuardViewModel : ViewModelBase
                             $"Error while confirm phone number, message: {e.Message}", ownerWindow);
                         return;
                     }
-                    
+
                     return;
                 }
 
@@ -358,18 +364,18 @@ public class AddGuardViewModel : ViewModelBase
                     $"Error while finializing guard, message: {e.Message}", ownerWindow);
             }
 
-            var steamGuardAccount = new SteamGuardAccount(_maFile!, new SteamRestClient(_proxy), sdaManager.GlobalSteamTime,
+            SteamGuardAccount steamGuardAccount = new(_maFile!, new SteamRestClient(_proxy), sdaManager.GlobalSteamTime,
                 NullLogger<SteamGuardAccount>.Instance);
 
             await steamGuardAccount.TryLoginAgainAsync(_login, _password);
 
-            var credentials = new MaFileCredentials(_proxy, _proxyString, _password);
+            MaFileCredentials credentials = new(_proxy, _proxyString, _password);
 
             await GuardAddedWindow.ShowWindow(steamGuardAccount, credentials, ownerWindow);
-            
+
             await sdaManager.AddAccountAsync(steamGuardAccount, credentials,
                 new SdaSettings(sdaManager.GlobalSettings.DefaultEnabledAutoConfirm, TimeSpan.FromMinutes(60)));
-            
+
             ownerWindow.Close();
         });
     }

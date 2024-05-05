@@ -6,15 +6,22 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
+
 using DynamicData.Binding;
+
 using Newtonsoft.Json;
+
 using ReactiveUI;
+
 using SteamAuthentication.Exceptions;
 using SteamAuthentication.Models;
+
 using TradeOnSda.Data;
 using TradeOnSda.ViewModels;
+using TradeOnSda.Views.Account;
 using TradeOnSda.Views.AccountList;
 using TradeOnSda.Windows.AddGuard;
 using TradeOnSda.Windows.ImportAccounts;
@@ -52,15 +59,15 @@ public class MainViewModel : ViewModelBase
     public ICommand ReLoginCommand { get; }
 
     public ICommand CopySdaCodeCommand { get; }
-    
+
     public ICommand AddGuardCommand { get; }
 
     public SdaManager SdaManager { get; }
-    
+
     public string VersionString { get; }
-    
+
     public ICommand AboutUsCommand { get; }
-    
+
     public ICommand VersionCommand { get; }
 
     public bool IsAccountSelected
@@ -91,18 +98,18 @@ public class MainViewModel : ViewModelBase
         ProgressValue = 0d;
         SdaManager = sdaManager;
         VersionString = GetUserFriendlyApplicationVersion();
-        
+
         AccountListViewModel = new AccountListViewModel(SdaManager, _ownerWindow);
 
         Observable.Interval(TimeSpan.FromSeconds(0.03))
             .Subscribe(_ =>
             {
-                var time = DateTime.UtcNow;
-                var date = time.Date;
+                DateTime time = DateTime.UtcNow;
+                DateTime date = time.Date;
 
-                var delta = (time - date).TotalMilliseconds / 1000d % 30d;
+                double delta = (time - date).TotalMilliseconds / 1000d % 30d;
 
-                var value = 100d - delta / 30d * 100d;
+                double value = 100d - delta / 30d * 100d;
 
                 ProgressValue = value;
             });
@@ -110,7 +117,7 @@ public class MainViewModel : ViewModelBase
         this.WhenPropertyChanged(t => t.SearchText)
             .Subscribe(valueWrapper =>
             {
-                var newSearchText = valueWrapper.Value;
+                string? newSearchText = valueWrapper.Value;
 
                 AccountListViewModel.SearchText = newSearchText ?? "";
             });
@@ -123,13 +130,13 @@ public class MainViewModel : ViewModelBase
 
                     _currentSdaCodeCts = new CancellationTokenSource();
 
-                    var newValue = valueWrapper.Value;
+                    AccountViewModel? newValue = valueWrapper.Value;
 
                     IsAccountSelected = newValue != null;
 
                     Task.Run(async () =>
                     {
-                        var token = _currentSdaCodeCts.Token;
+                        CancellationToken token = _currentSdaCodeCts.Token;
 
                         while (true)
                         {
@@ -139,7 +146,7 @@ public class MainViewModel : ViewModelBase
                                 return;
                             }
 
-                            var sdaCode = await newValue.SdaWithCredentials.SteamGuardAccount
+                            string? sdaCode = await newValue.SdaWithCredentials.SteamGuardAccount
                                 .TryGenerateSteamGuardCodeForTimeStampAsync(token);
 
                             SteamGuardToken = sdaCode ?? "-----";
@@ -154,7 +161,7 @@ public class MainViewModel : ViewModelBase
 
         ImportAccountsCommand = ReactiveCommand.CreateFromTask(async () =>
         {
-            var result = await _ownerWindow.StorageProvider.OpenFilePickerAsync(
+            System.Collections.Generic.IReadOnlyList<IStorageFile> result = await _ownerWindow.StorageProvider.OpenFilePickerAsync(
                 new FilePickerOpenOptions
                 {
                     AllowMultiple = true,
@@ -168,14 +175,14 @@ public class MainViewModel : ViewModelBase
                     Title = "Select mafiles",
                 });
 
-            foreach (var file in result)
+            foreach (IStorageFile file in result)
             {
                 try
                 {
-                    var path = file.Path.LocalPath;
-                    var maFileName = file.Name;
+                    string path = file.Path.LocalPath;
+                    string maFileName = file.Name;
 
-                    var steamMaFile = JsonConvert.DeserializeObject<SteamMaFile>(await File.ReadAllTextAsync(path))!;
+                    SteamMaFile steamMaFile = JsonConvert.DeserializeObject<SteamMaFile>(await File.ReadAllTextAsync(path))!;
 
                     await ImportAccountsWindow.CreateImportAccountWindowAsync(
                         steamMaFile,
@@ -192,17 +199,17 @@ public class MainViewModel : ViewModelBase
 
         ReLoginCommand = ReactiveCommand.CreateFromTask(async () =>
         {
-            var selectedAccountViewModel = AccountListViewModel.SelectedAccountViewModel;
+            AccountViewModel? selectedAccountViewModel = AccountListViewModel.SelectedAccountViewModel;
 
             if (selectedAccountViewModel == null)
                 return;
 
             try
             {
-                var credentials = selectedAccountViewModel.SdaWithCredentials.Credentials;
-                var username = selectedAccountViewModel.SdaWithCredentials.SteamGuardAccount.MaFile.AccountName;
+                MaFileCredentials credentials = selectedAccountViewModel.SdaWithCredentials.Credentials;
+                string? username = selectedAccountViewModel.SdaWithCredentials.SteamGuardAccount.MaFile.AccountName;
 
-                var result =
+                string? result =
                     await selectedAccountViewModel.SdaWithCredentials.SteamGuardAccount.LoginAgainAsync(username,
                         credentials.Password);
 
@@ -214,7 +221,7 @@ public class MainViewModel : ViewModelBase
 
                 await SdaManager.SaveMaFile(selectedAccountViewModel.SdaWithCredentials.SteamGuardAccount);
 
-                var _ =Task.Run(async () =>
+                Task _ = Task.Run(async () =>
                 {
                     IsReLoginSuccess = true;
                     await Task.Delay(TimeSpan.FromSeconds(1));
@@ -224,7 +231,7 @@ public class MainViewModel : ViewModelBase
             catch (RequestException e)
             {
                 await NotificationsMessageWindow.ShowWindow(
-                    $"Error login in steam, message: {e.Message}, statusCode: {e.HttpStatusCode.ToString()}", _ownerWindow);
+                    $"Error login in steam, message: {e.Message}, statusCode: {e.HttpStatusCode}", _ownerWindow);
             }
             catch (Exception e)
             {
@@ -237,7 +244,7 @@ public class MainViewModel : ViewModelBase
             if (SteamGuardToken == "-----")
                 return;
 
-            var setTask = _ownerWindow.Clipboard?.SetTextAsync(SteamGuardToken);
+            Task? setTask = _ownerWindow.Clipboard?.SetTextAsync(SteamGuardToken);
 
             if (setTask != null)
                 await setTask;
@@ -278,10 +285,10 @@ public class MainViewModel : ViewModelBase
 
     public static string GetUserFriendlyApplicationVersion()
     {
-        var version = Assembly.GetEntryAssembly()!.GetName().Version!;
+        Version version = Assembly.GetEntryAssembly()!.GetName().Version!;
 
-        var major = version.Major;
-        var minor = version.Minor;
+        int major = version.Major;
+        int minor = version.Minor;
 
         return $"v. {major}.{minor}";
     }

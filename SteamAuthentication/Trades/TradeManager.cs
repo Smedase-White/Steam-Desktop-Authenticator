@@ -28,7 +28,7 @@ public class TradeManager : IDisposable
 
         _cancellationTokenSource = new CancellationTokenSource();
 
-        var cancellationToken = _cancellationTokenSource.Token;
+        CancellationToken cancellationToken = _cancellationTokenSource.Token;
 
         _timer = new PeriodicTimer(UpdateInterval);
 
@@ -40,21 +40,21 @@ public class TradeManager : IDisposable
 
                 try
                 {
-                    var (sentOffers, receivedOffers) =
+                    (Responses.Offer[] sentOffers, Responses.Offer[] receivedOffers) =
                         await _tradeSteamAccount.GetSentAndReceivedTradeOffersAsync(_tradeSteamAccount.TradesState.StartTimeStamp,
                             cancellationToken);
-                    
-                    foreach (var offer in sentOffers)
+
+                    foreach (Responses.Offer offer in sentOffers)
                     {
-                        var tradeEvent = _tradeSteamAccount.TradesState.SetOffer(offer);
+                        TradeEvent? tradeEvent = _tradeSteamAccount.TradesState.SetOffer(offer);
 
                         if (tradeEvent != null)
                             _observable.NewEvent(tradeEvent);
                     }
 
-                    foreach (var offer in receivedOffers)
+                    foreach (Responses.Offer offer in receivedOffers)
                     {
-                        var tradeEvent = _tradeSteamAccount.TradesState.SetOffer(offer);
+                        TradeEvent? tradeEvent = _tradeSteamAccount.TradesState.SetOffer(offer);
 
                         if (tradeEvent != null)
                             _observable.NewEvent(tradeEvent);
@@ -65,11 +65,11 @@ public class TradeManager : IDisposable
                 {
                     throw;
                 }
-                catch (Exception e)
+                catch
                 {
                     // ignored
                 }
-                
+
                 cancellationToken.ThrowIfCancellationRequested();
             }
 

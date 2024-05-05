@@ -2,12 +2,17 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Input;
+
 using Avalonia.Controls;
+
 using Microsoft.Extensions.Logging.Abstractions;
+
 using ReactiveUI;
+
 using SteamAuthentication.Exceptions;
 using SteamAuthentication.LogicModels;
 using SteamAuthentication.Models;
+
 using TradeOnSda.Data;
 using TradeOnSda.ViewModels;
 using TradeOnSda.Windows.NotificationMessage;
@@ -91,7 +96,7 @@ public class ImportAccountsViewModel : ViewModelBase
             }
 
 
-            var loginResult = await AddAccountAsync(proxy, new SdaSettings(AutoConfirm, TimeSpan.FromSeconds(60)));
+            bool loginResult = await AddAccountAsync(proxy, new SdaSettings(AutoConfirm, TimeSpan.FromSeconds(60)));
 
             if (!loginResult)
                 return;
@@ -107,17 +112,17 @@ public class ImportAccountsViewModel : ViewModelBase
     {
         try
         {
-            var steamTime = _sdaManager.GlobalSteamTime;
+            GlobalSteamTime steamTime = _sdaManager.GlobalSteamTime;
 
-            var maFileCredentials =
-                new MaFileCredentials(proxy, ProxyString, Password);
+            MaFileCredentials maFileCredentials = new(proxy, ProxyString, Password);
 
-            var sda = new SteamGuardAccount(_maFile,
+            SteamGuardAccount sda = new(
+                _maFile,
                 new SteamRestClient(proxy),
                 steamTime,
                 NullLogger<SteamGuardAccount>.Instance);
 
-            var loginAgainResult = await sda.LoginAgainAsync(Login, Password);
+            string? loginAgainResult = await sda.LoginAgainAsync(Login, Password);
 
             if (loginAgainResult != null)
             {

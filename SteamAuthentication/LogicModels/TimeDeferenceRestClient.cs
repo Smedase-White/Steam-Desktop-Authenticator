@@ -1,5 +1,7 @@
 using System.Net;
+
 using Newtonsoft.Json;
+
 using SteamAuthentication.Exceptions;
 
 #pragma warning disable CS0168
@@ -16,7 +18,7 @@ public class TimeDeferenceRestClient : SteamRestClient
     {
         try
         {
-            var response =
+            RestSharp.RestResponse response =
                 await ExecutePostRequestWithoutHeadersAsync(Endpoints.TwoFactorTimeQuery, null, "steamid=0", cancellationToken);
 
             if (!response.IsSuccessful)
@@ -25,7 +27,7 @@ public class TimeDeferenceRestClient : SteamRestClient
             if (response.Content == null)
                 throw new RequestException("Response content is null", response.StatusCode, null, null);
 
-            var timeQuery = JsonConvert.DeserializeObject<TimeQuery>(response.Content);
+            TimeQuery? timeQuery = JsonConvert.DeserializeObject<TimeQuery>(response.Content);
 
             if (timeQuery == null)
                 throw new RequestException("Deserialized time query value is null", response.StatusCode,

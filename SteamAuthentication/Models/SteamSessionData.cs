@@ -1,4 +1,5 @@
 using System.Net;
+
 using Newtonsoft.Json;
 
 namespace SteamAuthentication.Models;
@@ -58,7 +59,7 @@ public class SteamSessionData
 
     public CookieContainer CreateCookies()
     {
-        var container = new CookieContainer();
+        CookieContainer container = new();
 
         SetCookies(container);
 

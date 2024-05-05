@@ -7,7 +7,7 @@ internal static class TryHelpers
     {
         try
         {
-            var result = await task;
+            T result = await task;
 
             return result;
         }

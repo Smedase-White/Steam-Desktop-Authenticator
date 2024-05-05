@@ -1,6 +1,6 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+
 using SteamAuthentication.LogicModels;
 using SteamAuthentication.Models;
 

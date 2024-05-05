@@ -24,9 +24,9 @@ public class SteamTime : ISteamTime
 
     public async Task SynchronizeTimeAsync(CancellationToken cancellationToken = default)
     {
-        var steamTime = await _restClient.GetSteamTimeAsync(cancellationToken);
+        long steamTime = await _restClient.GetSteamTimeAsync(cancellationToken);
 
-        var clientTime = GetCurrentClientTime();
+        long clientTime = GetCurrentClientTime();
 
         _timeDifference = steamTime - clientTime;
     }

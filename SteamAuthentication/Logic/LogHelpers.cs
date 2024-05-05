@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
+
 using Microsoft.Extensions.Logging;
+
 using RestSharp;
 
 namespace SteamAuthentication.Logic;

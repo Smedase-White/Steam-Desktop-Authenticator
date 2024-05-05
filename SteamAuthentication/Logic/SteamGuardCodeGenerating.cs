@@ -2,6 +2,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+
 using Microsoft.Extensions.Logging;
 
 namespace SteamAuthentication.Logic;
@@ -15,36 +16,35 @@ internal static class SteamGuardCodeGenerating
         if (string.IsNullOrEmpty(sharedSecret))
             return "";
 
-        var sharedSecretUnescaped = Regex.Unescape(sharedSecret);
-        var sharedSecretArray = Convert.FromBase64String(sharedSecretUnescaped);
+        string sharedSecretUnescaped = Regex.Unescape(sharedSecret);
+        byte[] sharedSecretArray = Convert.FromBase64String(sharedSecretUnescaped);
 
-        var timeArray = new byte[8];
+        byte[] timeArray = new byte[8];
 
         timestamp /= 30L;
 
-        for (var i = 8; i > 0; i--)
+        for (int i = 8; i > 0; i--)
         {
             timeArray[i - 1] = (byte)timestamp;
             timestamp >>= 8;
         }
 
-        var hmacGenerator = new HMACSHA1();
-        hmacGenerator.Key = sharedSecretArray;
+        HMACSHA1 hmacGenerator = new() { Key = sharedSecretArray };
 
-        var hashedData = hmacGenerator.ComputeHash(timeArray);
-        var codeArray = new byte[5];
+        byte[] hashedData = hmacGenerator.ComputeHash(timeArray);
+        byte[] codeArray = new byte[5];
 
         try
         {
-            var b = (byte)(hashedData[19] & 0xF);
+            byte b = (byte)(hashedData[19] & 0xF);
 
-            var codePoint =
+            int codePoint =
                 (hashedData[b] & 0x7F) << 24 |
                 (hashedData[b + 1] & 0xFF) << 16 |
                 (hashedData[b + 2] & 0xFF) << 8 |
                 (hashedData[b + 3] & 0xFF);
 
-            for (var i = 0; i < 5; ++i)
+            for (int i = 0; i < 5; ++i)
             {
                 codeArray[i] = SteamGuardCodeTranslations[codePoint % SteamGuardCodeTranslations.Length];
                 codePoint /= SteamGuardCodeTranslations.Length;
@@ -60,8 +60,8 @@ internal static class SteamGuardCodeGenerating
 
     public static string? GenerateConfirmationHash(long timeStamp, string? tag, string identitySecret, ILogger logger)
     {
-        var decode = Convert.FromBase64String(identitySecret);
-        var n2 = 8;
+        byte[] decode = Convert.FromBase64String(identitySecret);
+        int n2 = 8;
 
         if (tag != null)
             if (tag.Length > 32)
@@ -69,13 +69,13 @@ internal static class SteamGuardCodeGenerating
             else
                 n2 = 8 + tag.Length;
 
-        var array = new byte[n2];
-        var n3 = 8;
+        byte[] array = new byte[n2];
+        int n3 = 8;
 
         while (true)
         {
-            var n4 = n3 - 1;
-            
+            int n4 = n3 - 1;
+
             if (n3 <= 0)
                 break;
 
@@ -84,25 +84,23 @@ internal static class SteamGuardCodeGenerating
             n3 = n4;
         }
 
-        if (tag != null) 
+        if (tag != null)
             Array.Copy(Encoding.UTF8.GetBytes(tag), 0, array, 8, n2 - 8);
 
         try
         {
-            var hmacGenerator = new HMACSHA1();
-            
-            hmacGenerator.Key = decode;
-            
-            var hashedData = hmacGenerator.ComputeHash(array);
-            var encodedData = Convert.ToBase64String(hashedData, Base64FormattingOptions.None);
-            var hash = WebUtility.UrlEncode(encodedData);
+            HMACSHA1 hmacGenerator = new() { Key = decode };
+
+            byte[] hashedData = hmacGenerator.ComputeHash(array);
+            string encodedData = Convert.ToBase64String(hashedData, Base64FormattingOptions.None);
+            string hash = WebUtility.UrlEncode(encodedData);
 
             return hash;
         }
         catch (Exception e)
         {
             logger.LogError("Error compute confirmation hash, exception: {exception}", e.ToJson());
-            
+
             return null;
         }
     }

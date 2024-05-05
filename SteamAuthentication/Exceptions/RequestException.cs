@@ -17,7 +17,7 @@ public class RequestException : Exception
 
     public override string ToString()
     {
-        var httpStatusCode = "unknown";
+        string? httpStatusCode = "unknown";
 
         if (HttpStatusCode != null)
             httpStatusCode = HttpStatusCode.ToString();

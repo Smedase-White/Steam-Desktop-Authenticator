@@ -10,13 +10,13 @@ public static class ProxyLogic
         if (string.IsNullOrWhiteSpace(proxyString))
             return null;
 
-        var protocol = "http://";
+        string protocol = "http://";
 
         if (proxyString.ToLower().StartsWith("https://"))
             proxyString = proxyString[8..];
         else if (proxyString.ToLower().StartsWith("http://")) proxyString = proxyString[7..];
 
-        var tokens = proxyString.Split(':');
+        string[] tokens = proxyString.Split(':');
 
         return tokens.Length switch
         {

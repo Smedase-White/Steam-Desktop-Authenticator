@@ -10,9 +10,9 @@ public class ParseStringToIntConverter : JsonConverter
     {
         if (reader.TokenType == JsonToken.Null) return null;
 
-        var value = serializer.Deserialize<string>(reader);
+        string? value = serializer.Deserialize<string>(reader);
 
-        if (int.TryParse(value, out var l))
+        if (int.TryParse(value, out int l))
             return l;
 
         throw new Exception("Cannot unmarshal type long");
@@ -26,7 +26,7 @@ public class ParseStringToIntConverter : JsonConverter
             return;
         }
 
-        var value = (int)untypedValue;
+        int value = (int)untypedValue;
         serializer.Serialize(writer, value.ToString());
     }
 }

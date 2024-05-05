@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
+
 using RestSharp;
 
 namespace TradeOnSda.Data;
@@ -9,7 +10,7 @@ public static class ProxyChecking
 {
     public static async Task<bool> CheckProxyAsync(IWebProxy proxy)
     {
-        var client = new RestClient(options =>
+        RestClient client = new(options =>
         {
             options.Proxy = proxy;
             options.MaxTimeout = (int)TimeSpan.FromSeconds(10).TotalMilliseconds;
@@ -22,9 +23,9 @@ public static class ProxyChecking
     {
         try
         {
-            var request = new RestRequest("https://gstatic.com/generate_204");
+            RestRequest request = new("https://gstatic.com/generate_204");
 
-            var response = await client.ExecuteAsync(request);
+            RestResponse response = await client.ExecuteAsync(request);
 
             return response.StatusCode == HttpStatusCode.NoContent;
         }

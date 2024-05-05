@@ -9,9 +9,9 @@ public class ParseStringToLongConverter : JsonConverter
     public override object? ReadJson(JsonReader reader, Type t, object? existingValue, JsonSerializer serializer)
     {
         if (reader.TokenType == JsonToken.Null) return null;
-        var value = serializer.Deserialize<string>(reader);
+        string? value = serializer.Deserialize<string>(reader);
 
-        if (long.TryParse(value, out var l))
+        if (long.TryParse(value, out long l))
             return l;
 
         throw new Exception("Cannot unmarshal type long");
@@ -25,7 +25,7 @@ public class ParseStringToLongConverter : JsonConverter
             return;
         }
 
-        var value = (long)untypedValue;
+        long value = (long)untypedValue;
         serializer.Serialize(writer, value.ToString());
     }
 }

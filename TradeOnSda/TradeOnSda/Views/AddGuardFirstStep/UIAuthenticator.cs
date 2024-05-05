@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+
 using SteamKit2.Authentication;
 
 namespace TradeOnSda.Views.AddGuardFirstStep;
@@ -16,9 +17,9 @@ public class UIAuthenticator : IAuthenticator
 
     public async Task<string> GetDeviceCodeAsync(bool previousCodeWasIncorrect)
     {
-        var title = previousCodeWasIncorrect ? "Incorrect code. Enter a new 2FA code" : "Enter a 2FA code";
+        string title = previousCodeWasIncorrect ? "Incorrect code. Enter a new 2FA code" : "Enter a 2FA code";
 
-        var result = await _viewModel.AskUserAsync(title);
+        string result = await _viewModel.AskUserAsync(title);
 
         if (result == null)
             throw new UserCancelException();
@@ -28,9 +29,9 @@ public class UIAuthenticator : IAuthenticator
 
     public async Task<string> GetEmailCodeAsync(string email, bool previousCodeWasIncorrect)
     {
-        var title = previousCodeWasIncorrect ? "Incorrect code. Enter a correct e-mail code" : "Enter a e-mail code";
-        
-        var result = await _viewModel.AskUserAsync(title);
+        string title = previousCodeWasIncorrect ? "Incorrect code. Enter a correct e-mail code" : "Enter a e-mail code";
+
+        string result = await _viewModel.AskUserAsync(title);
 
         if (result == null)
             throw new UserCancelException();

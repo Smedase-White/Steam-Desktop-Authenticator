@@ -1,5 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
+
 using JetBrains.Annotations;
+
 using ReactiveUI;
 
 namespace TradeOnSda.ViewModels;

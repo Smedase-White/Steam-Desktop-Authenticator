@@ -1,6 +1,8 @@
 using Avalonia.Controls;
+
 using SteamAuthentication.LogicModels;
 using SteamAuthentication.Models;
+
 using TradeOnSda.ViewModels;
 using TradeOnSda.Views.Confirmations;
 

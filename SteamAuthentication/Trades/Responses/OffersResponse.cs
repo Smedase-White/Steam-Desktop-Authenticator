@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+
 using SteamAuthentication.Trades.Responses.Converters;
 
 namespace SteamAuthentication.Trades.Responses;

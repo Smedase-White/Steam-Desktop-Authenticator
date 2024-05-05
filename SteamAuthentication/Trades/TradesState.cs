@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+
 using SteamAuthentication.Trades.Models;
 using SteamAuthentication.Trades.Responses;
 
@@ -9,7 +10,7 @@ public class TradesState
     private readonly ConcurrentDictionary<ulong, Offer> _offers;
 
     internal long StartTimeStamp { get; }
-    
+
     public IReadOnlyDictionary<ulong, Offer> CurrentOffers => _offers.AsReadOnly();
 
     public TradesState(long startTimeStamp)
@@ -21,14 +22,12 @@ public class TradesState
 
     internal TradeEvent? SetOffer(Offer offer)
     {
-        if (!_offers.ContainsKey(offer.TradeOfferId))
+        if (!_offers.TryGetValue(offer.TradeOfferId, out Offer? previousState))
         {
             _offers[offer.TradeOfferId] = offer;
 
             return new TradeEvent(null, offer);
         }
-
-        var previousState = _offers[offer.TradeOfferId];
 
         if (previousState.TradeOfferState == offer.TradeOfferState)
         {

@@ -1,10 +1,14 @@
 using System.Net;
+
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Newtonsoft.Json;
+
 using SteamAuthentication.Exceptions;
 using SteamAuthentication.Logic;
 using SteamAuthentication.LogicModels;
 using SteamAuthentication.Models;
+
 using SteamKit2;
 using SteamKit2.Authentication;
 using SteamKit2.Internal;
@@ -39,27 +43,27 @@ public class GuardLinker
     public async Task<(CredentialsAuthSession authSession, AuthPollResult pollResponse, ulong steamId)>
         StartLinkingGuardAsync(CancellationToken cancellationToken = default)
     {
-        var configuration = SteamConfiguration.Create(builder => builder.WithHttpClientFactory(
+        SteamConfiguration configuration = SteamConfiguration.Create(builder => builder.WithHttpClientFactory(
             () =>
             {
-                var httpClientHandler = new HttpClientHandler
+                HttpClientHandler httpClientHandler = new HttpClientHandler
                 {
                     Proxy = _proxy,
                 };
 
-                var client = new HttpClient(httpClientHandler);
+                HttpClient client = new HttpClient(httpClientHandler);
 
                 return client;
             })
             .WithProtocolTypes(ProtocolTypes.WebSocket));
 
-        var steamClient = new SteamClient(configuration);
+        SteamClient steamClient = new SteamClient(configuration);
         steamClient.ConnectWithProxy(null, _proxy);
 
         while (!steamClient.IsConnected)
             await Task.Delay(500, cancellationToken);
 
-        var authSession = await steamClient.Authentication.BeginAuthSessionViaCredentialsAsync(new AuthSessionDetails
+        CredentialsAuthSession authSession = await steamClient.Authentication.BeginAuthSessionViaCredentialsAsync(new AuthSessionDetails
         {
             Username = _username,
             Password = _password,
@@ -69,9 +73,9 @@ public class GuardLinker
             Authenticator = _authenticator,
         });
 
-        var pollResponse = await authSession.PollingWaitForResultAsync(cancellationToken);
+        AuthPollResult pollResponse = await authSession.PollingWaitForResultAsync(cancellationToken);
 
-        var steamId = authSession.SteamID.ConvertToUInt64();
+        ulong steamId = authSession.SteamID.ConvertToUInt64();
 
         return (authSession, pollResponse, steamId);
     }
@@ -80,12 +84,12 @@ public class GuardLinker
         AuthPollResult pollResult,
         CancellationToken cancellationToken = default)
     {
-        var timestamp = await _steamTime.GetCurrentSteamTimeAsync(cancellationToken);
+        long timestamp = await _steamTime.GetCurrentSteamTimeAsync(cancellationToken);
 
-        var guardCode =
+        string guardCode =
             SteamGuardCodeGenerating.GenerateSteamGuardCode(maFile.SharedSecret, timestamp, NullLogger.Instance);
 
-        var query = new Dictionary<string, string>
+        Dictionary<string, string> query = new Dictionary<string, string>
         {
             { "steamid", maFile.Session!.SteamId.ToString() },
             { "authenticator_code", guardCode },
@@ -94,10 +98,10 @@ public class GuardLinker
             { "validate_sms_code", "1" },
         };
 
-        var url =
+        string url =
             $"https://api.steampowered.com/ITwoFactorService/FinalizeAddAuthenticator/v1/?access_token={pollResult.AccessToken}";
 
-        var response = await _noMaFileRestClient.SendPostAsync(url, query.ToQuery(), cancellationToken);
+        RestSharp.RestResponse response = await _noMaFileRestClient.SendPostAsync(url, query.ToQuery(), cancellationToken);
 
         if (!response.IsSuccessful)
             throw new RequestException("Error while executing FinalizeAddAuthenticator request", response.StatusCode,
@@ -109,7 +113,7 @@ public class GuardLinker
                 response.StatusCode,
                 null, null);
 
-        var finalizeContent =
+        string finalizeContent =
             await GZipDecoding.DecodeGZipAsync(response.RawBytes, NullLogger.Instance, cancellationToken);
 
         FinalizeAuthenticatorResponseWrapper? finalizeResponse;
@@ -141,7 +145,7 @@ public class GuardLinker
     public async Task<SteamMaFile> SendAddGuardRequestAsync(ulong steamId,
         AuthPollResult pollResult, CancellationToken cancellationToken = default)
     {
-        var query = new Dictionary<string, string>
+        Dictionary<string, string> query = new Dictionary<string, string>
         {
             { "steamid", steamId.ToString() },
             { "authenticator_time", (await _steamTime.GetCurrentSteamTimeAsync(cancellationToken)).ToString() },
@@ -150,10 +154,10 @@ public class GuardLinker
             { "sms_phone_id", "1" }
         };
 
-        var url =
+        string url =
             $"https://api.steampowered.com/ITwoFactorService/AddAuthenticator/v1/?access_token={pollResult.AccessToken}";
 
-        var response = await _noMaFileRestClient.SendPostAsync(url, query.ToQuery(), cancellationToken);
+        RestSharp.RestResponse response = await _noMaFileRestClient.SendPostAsync(url, query.ToQuery(), cancellationToken);
 
         if (!response.IsSuccessful)
             throw new RequestException("Error while executing AddAuthenticator request", response.StatusCode, null,
@@ -164,7 +168,7 @@ public class GuardLinker
                 response.StatusCode,
                 null, null);
 
-        var addGuardContent =
+        string addGuardContent =
             await GZipDecoding.DecodeGZipAsync(response.RawBytes, NullLogger.Instance, cancellationToken);
 
         AddGuardResponseWrapper? addGuardResponse;
@@ -186,11 +190,11 @@ public class GuardLinker
 
         if (addGuardResponse.Response.Status == 2)
         {
-            var phoneNumber = await _phoneNumberProvider.GetPhoneNumberAsync(cancellationToken);
+            string phoneNumber = await _phoneNumberProvider.GetPhoneNumberAsync(cancellationToken);
 
-            var userCountry = await GetUserCountryAsync(steamId, pollResult.AccessToken, cancellationToken);
+            string userCountry = await GetUserCountryAsync(steamId, pollResult.AccessToken, cancellationToken);
 
-            var email = await SetPhoneNumberAsync(phoneNumber, userCountry, pollResult.AccessToken, cancellationToken);
+            string? email = await SetPhoneNumberAsync(phoneNumber, userCountry, pollResult.AccessToken, cancellationToken);
 
             throw new PhoneNumberException(email);
         }
@@ -199,7 +203,7 @@ public class GuardLinker
             throw new RequestException($"Error add authenticator, status is {addGuardResponse.Response.Status}",
                 response.StatusCode, addGuardContent, null);
 
-        var steamMaFile = new SteamMaFile(
+        SteamMaFile steamMaFile = new SteamMaFile(
             addGuardResponse.Response.SharedSecret,
             addGuardResponse.Response.SerialNumber,
             addGuardResponse.Response.RevocationCode,
@@ -220,12 +224,12 @@ public class GuardLinker
     private async Task<string> GetUserCountryAsync(ulong steamId, string accessToken,
         CancellationToken cancellationToken)
     {
-        var query = new Dictionary<string, string>();
+        Dictionary<string, string> query = new Dictionary<string, string>();
         query.Add("steamid", steamId.ToString());
 
-        var url = $"https://api.steampowered.com/IUserAccountService/GetUserCountry/v1?access_token={accessToken}";
+        string url = $"https://api.steampowered.com/IUserAccountService/GetUserCountry/v1?access_token={accessToken}";
 
-        var response = await _noMaFileRestClient.SendPostAsync(url, query.ToQuery(), cancellationToken);
+        RestSharp.RestResponse response = await _noMaFileRestClient.SendPostAsync(url, query.ToQuery(), cancellationToken);
 
         if (!response.IsSuccessful)
             throw new RequestException("Error while executing GetUserCountry request", response.StatusCode, null,
@@ -236,7 +240,7 @@ public class GuardLinker
                 response.StatusCode,
                 null, null);
 
-        var getUserCountryContent =
+        string getUserCountryContent =
             await GZipDecoding.DecodeGZipAsync(response.RawBytes, NullLogger.Instance, cancellationToken);
 
         GetUserCountryResponseWrapper? addGuardResponse;
@@ -264,9 +268,9 @@ public class GuardLinker
 
     public async Task ConfirmPhoneNumberAsync(string accessToken, CancellationToken cancellationToken = default)
     {
-        var url = $"https://api.steampowered.com/IPhoneService/SendPhoneVerificationCode/v1?access_token={accessToken}";
+        string url = $"https://api.steampowered.com/IPhoneService/SendPhoneVerificationCode/v1?access_token={accessToken}";
 
-        var response = await _noMaFileRestClient.SendPostAsync(url, "", cancellationToken);
+        RestSharp.RestResponse response = await _noMaFileRestClient.SendPostAsync(url, "", cancellationToken);
 
         if (!response.IsSuccessful)
             throw new RequestException("Error while executing SendPhoneVerificationCode request", response.StatusCode,
@@ -282,14 +286,14 @@ public class GuardLinker
     private async Task<string?> SetPhoneNumberAsync(string phoneNumber, string userCountry, string accessToken,
         CancellationToken cancellationToken)
     {
-        var query = new Dictionary<string, string>();
+        Dictionary<string, string> query = new Dictionary<string, string>();
 
         query.Add("phone_number", phoneNumber);
         query.Add("phone_country_code", userCountry);
 
-        var url = $"https://api.steampowered.com/IPhoneService/SetAccountPhoneNumber/v1?access_token={accessToken}";
+        string url = $"https://api.steampowered.com/IPhoneService/SetAccountPhoneNumber/v1?access_token={accessToken}";
 
-        var response = await _noMaFileRestClient.SendPostAsync(url, query.ToQuery(), cancellationToken);
+        RestSharp.RestResponse response = await _noMaFileRestClient.SendPostAsync(url, query.ToQuery(), cancellationToken);
 
         if (!response.IsSuccessful)
             throw new RequestException("Error while executing SetAccountPhoneNumber request", response.StatusCode, null,
@@ -300,7 +304,7 @@ public class GuardLinker
                 response.StatusCode,
                 null, null);
 
-        var setPhoneNumberContent =
+        string setPhoneNumberContent =
             await GZipDecoding.DecodeGZipAsync(response.RawBytes, NullLogger.Instance, cancellationToken);
 
         SetPhoneNumberResponseWrapper? setPhoneNumberResponse;

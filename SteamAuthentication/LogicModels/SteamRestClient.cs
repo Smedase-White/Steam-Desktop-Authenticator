@@ -1,6 +1,8 @@
 using System.Net;
 using System.Threading.RateLimiting;
+
 using RestSharp;
+
 using SteamAuthentication.Exceptions;
 
 namespace SteamAuthentication.LogicModels;
@@ -9,10 +11,10 @@ public class SteamRestClient
 {
     private readonly RestClient _restClient;
 
-    private RateLimiter? _rateLimiter; 
-    
+    private RateLimiter? _rateLimiter;
+
     public IWebProxy? Proxy { get; }
-    
+
     // ReSharper disable once MemberCanBeProtected.Global
     public SteamRestClient(IWebProxy? proxy)
     {
@@ -38,16 +40,16 @@ public class SteamRestClient
     {
         if (_rateLimiter == null)
         {
-            var response = await _restClient.ExecuteAsync(request,ct);
+            RestResponse response = await _restClient.ExecuteAsync(request, ct);
 
             return response;
         }
 
-        using var lease = await _rateLimiter.AcquireAsync(1, ct);
-        
+        using RateLimitLease lease = await _rateLimiter.AcquireAsync(1, ct);
+
         if (lease.IsAcquired)
         {
-            var response = await _restClient.ExecuteAsync(request, ct);
+            RestResponse response = await _restClient.ExecuteAsync(request, ct);
 
             return response;
         }
@@ -59,18 +61,15 @@ public class SteamRestClient
         IEnumerable<(string name, string value)>? headers, string referer,
         CancellationToken cancellationToken = default)
     {
-        var request = new RestRequest(url)
-        {
-            CookieContainer = cookies,
-        };
+        RestRequest request = new(url) { CookieContainer = cookies };
 
         AddHeadersToRequest(request, referer);
 
         if (headers != null)
-            foreach (var (name, value) in headers)
+            foreach ((string name, string value) in headers)
                 request.AddHeader(name, value);
 
-        var response = await ExecuteAsync(request, cancellationToken);
+        RestResponse response = await ExecuteAsync(request, cancellationToken);
 
         return response;
     }
@@ -80,43 +79,37 @@ public class SteamRestClient
         string body,
         CancellationToken cancellationToken = default)
     {
-        var request = new RestRequest(url, Method.Post)
-        {
-            CookieContainer = cookies,
-        };
+        RestRequest request = new(url, Method.Post) { CookieContainer = cookies };
 
         AddHeadersToRequest(request, referer);
 
         if (headers != null)
-            foreach (var (name, value) in headers)
+            foreach ((string name, string value) in headers)
                 request.AddHeader(name, value);
 
         request.AddBody(body, ContentType.FormUrlEncoded);
 
-        var response = await ExecuteAsync(request, cancellationToken);
+        RestResponse response = await ExecuteAsync(request, cancellationToken);
 
         return response;
     }
-    
+
     public async Task<RestResponse> ExecutePostRequestAsync(string url, CookieContainer cookies,
         IEnumerable<(string name, string value)>? headers,
         string body,
         CancellationToken cancellationToken = default)
     {
-        var request = new RestRequest(url, Method.Post)
-        {
-            CookieContainer = cookies,
-        };
+        RestRequest request = new(url, Method.Post) { CookieContainer = cookies };
 
         AddHeadersToRequest(request);
 
         if (headers != null)
-            foreach (var (name, value) in headers)
+            foreach ((string name, string value) in headers)
                 request.AddHeader(name, value);
 
         request.AddBody(body, ContentType.FormUrlEncoded);
 
-        var response = await ExecuteAsync(request, cancellationToken);
+        RestResponse response = await ExecuteAsync(request, cancellationToken);
 
         return response;
     }
@@ -124,14 +117,11 @@ public class SteamRestClient
     public async Task<RestResponse> ExecuteGetRequestAsync(string url, CookieContainer? cookies,
         CancellationToken cancellationToken = default)
     {
-        var request = new RestRequest(url)
-        {
-            CookieContainer = cookies
-        };
+        RestRequest request = new(url) { CookieContainer = cookies };
 
         AddHeadersToRequest(request);
 
-        var response = await ExecuteAsync(request, cancellationToken);
+        RestResponse response = await ExecuteAsync(request, cancellationToken);
 
         return response;
     }
@@ -141,14 +131,11 @@ public class SteamRestClient
         string body,
         CancellationToken cancellationToken = default)
     {
-        var request = new RestRequest(url, Method.Post)
-        {
-            CookieContainer = cookies,
-        };
+        RestRequest request = new(url, Method.Post) { CookieContainer = cookies };
 
         request.AddBody(body);
 
-        var response = await ExecuteAsync(request, cancellationToken);
+        RestResponse response = await ExecuteAsync(request, cancellationToken);
 
         return response;
     }

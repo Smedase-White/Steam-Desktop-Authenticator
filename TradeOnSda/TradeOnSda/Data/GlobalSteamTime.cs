@@ -1,7 +1,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Nito.AsyncEx;
+
 using SteamAuthentication.LogicModels;
 
 namespace TradeOnSda.Data;
@@ -42,9 +44,9 @@ public class GlobalSteamTime : ISteamTime
         if (_timeDifference != null)
             return GetCurrentSteamTimeInternal();
 
-        var steamTime = await _timeDeferenceRestClient.GetSteamTimeAsync(cancellationToken);
+        long steamTime = await _timeDeferenceRestClient.GetSteamTimeAsync(cancellationToken);
 
-        var clientTime = GetCurrentClientTime();
+        long clientTime = GetCurrentClientTime();
 
         _timeDifference = steamTime - clientTime;
 

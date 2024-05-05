@@ -1,7 +1,8 @@
 using System.Threading.Tasks;
-using Avalonia;
+
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+
 using TradeOnSda.Data;
 
 namespace TradeOnSda.Windows.AddGuard;
@@ -15,7 +16,7 @@ public partial class AddGuardWindow : Window
         this.AttachDevTools();
 #endif
 
-        var dataContext = new AddGuardWindowViewModel(this, sdaManager);
+        AddGuardWindowViewModel dataContext = new AddGuardWindowViewModel(this, sdaManager);
         DataContext = dataContext;
 
         Closing += (_, _) =>
@@ -29,6 +30,6 @@ public partial class AddGuardWindow : Window
         AvaloniaXamlLoader.Load(this);
     }
 
-    public static async Task ShowWindow(SdaManager sdaManager, Window owner) => 
+    public static async Task ShowWindow(SdaManager sdaManager, Window owner) =>
         await new AddGuardWindow(sdaManager).ShowDialog(owner);
 }

@@ -1,9 +1,10 @@
 using Newtonsoft.Json;
+
 using SteamAuthentication.Trades.Responses.Converters;
 
 namespace SteamAuthentication.Trades.Responses;
 
-public class NewOfferResponse   
+public class NewOfferResponse
 {
     [JsonProperty("tradeofferid", Required = Required.Always)]
     [JsonConverter(typeof(ParseStringToLongConverter))]

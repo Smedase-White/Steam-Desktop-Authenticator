@@ -3,8 +3,11 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Newtonsoft.Json;
+
 using SteamAuthentication.Exceptions;
 using SteamAuthentication.LogicModels;
 using SteamAuthentication.Models;
@@ -20,7 +23,7 @@ public class SdaWithCredentials
     public MaFileCredentials Credentials { get; set; }
 
     public SdaSettings SdaSettings { get; set; }
-    
+
     public SdaState SdaState { get; }
 
     public SdaWithCredentials(SteamGuardAccount steamGuardAccount, MaFileCredentials credentials,
@@ -56,7 +59,7 @@ public class SdaWithCredentials
 
         try
         {
-            var confirmations = (await SteamGuardAccount.FetchConfirmationAsync())
+            SdaConfirmation[] confirmations = (await SteamGuardAccount.FetchConfirmationAsync())
                 .Where(t => t.ConfirmationType is ConfirmationType.MarketSellTransaction
                     or ConfirmationType.Trade).ToArray();
 
@@ -65,10 +68,10 @@ public class SdaWithCredentials
                 await Task.Delay(SdaSettings.AutoConfirmDelay);
                 return;
             }
-            
+
             await Task.Delay(TimeSpan.FromSeconds(10));
 
-            await SteamGuardAccount.AcceptConfirmationsAsync(confirmations.ToArray());
+            await SteamGuardAccount.AcceptConfirmationsAsync([.. confirmations]);
 
             await Task.Delay(SdaSettings.AutoConfirmDelay);
         }
@@ -77,10 +80,10 @@ public class SdaWithCredentials
             if (e.HttpStatusCode == HttpStatusCode.Unauthorized)
             {
                 await Task.Delay(SdaSettings.AutoConfirmDelay);
-                
+
                 try
                 {
-                    var result =
+                    string? result =
                         await SteamGuardAccount.LoginAgainAsync(SteamGuardAccount.MaFile.AccountName,
                             Credentials.Password);
 
@@ -116,22 +119,22 @@ public class SdaWithCredentials
 
     public static async Task<SdaWithCredentials> FromDto(SavedSdaDto dto, SdaManager sdaManager)
     {
-        var maFileName = $"MaFiles/{dto.SteamId}.maFile";
-        
+        string maFileName = $"MaFiles/{dto.SteamId}.maFile";
+
         if (!sdaManager.FileSystemAdapterProvider.GetAdapter().ExistsFile(maFileName))
             throw new Exception("MaFile not found");
 
-        var maFileContent = await sdaManager.FileSystemAdapterProvider.GetAdapter()
+        string maFileContent = await sdaManager.FileSystemAdapterProvider.GetAdapter()
             .ReadFileAsync(maFileName, CancellationToken.None);
 
-        var maFile = JsonConvert.DeserializeObject<SteamMaFile>(maFileContent) ??
+        SteamMaFile maFile = JsonConvert.DeserializeObject<SteamMaFile>(maFileContent) ??
                      throw new Exception("SteamMaFile is null");
-        
-        var proxy = ProxyLogic.ParseWebProxy(dto.ProxyString);
 
-        var steamTime = sdaManager.GlobalSteamTime;
+        IWebProxy? proxy = ProxyLogic.ParseWebProxy(dto.ProxyString);
 
-        var sda = new SteamGuardAccount(
+        GlobalSteamTime steamTime = sdaManager.GlobalSteamTime;
+
+        SteamGuardAccount sda = new(
             maFile,
             new SteamRestClient(proxy),
             steamTime,

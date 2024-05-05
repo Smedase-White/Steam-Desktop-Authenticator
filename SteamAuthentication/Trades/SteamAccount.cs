@@ -1,7 +1,11 @@
 using System.Net;
+
 using Microsoft.Extensions.Logging;
+
 using Newtonsoft.Json;
+
 using RestSharp;
+
 using SteamAuthentication.Exceptions;
 using SteamAuthentication.Logic;
 using SteamAuthentication.LogicModels;
@@ -38,11 +42,11 @@ public class SteamAccount
     public async Task<SteamInventory> GetMyInventoryAsync(int appId, int contextId = 2,
         CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
         _logger.LogDebug("AppId: {appId}, contextId: {contextId}", appId, contextId);
 
-        var inventory = await GetInventoryInternalAsync(
+        SteamInventory inventory = await GetInventoryInternalAsync(
             appId,
             contextId,
             SteamGuardAccount.MaFile.Session!.SteamId,
@@ -58,11 +62,11 @@ public class SteamAccount
     public async Task<SteamInventory> GetInventoryAsync(int appId, ulong steamId, int contextId = 2,
         CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
         _logger.LogDebug("AppId: {appId}, contextId: {contextId}", appId, contextId);
 
-        var inventory = await GetInventoryInternalAsync(
+        SteamInventory inventory = await GetInventoryInternalAsync(
             appId,
             contextId,
             steamId,
@@ -87,14 +91,14 @@ public class SteamAccount
     public async Task<SteamInventory> GetInventoryInternalAsync(int appId, int contextId, ulong steamId,
         CancellationToken cancellationToken = default)
     {
-        var url = $"https://steamcommunity.com/inventory/{steamId}/{appId}/{contextId}?l=english&count=5000";
+        string url = $"https://steamcommunity.com/inventory/{steamId}/{appId}/{contextId}?l=english&count=5000";
 
-        var referer = $"https://steamcommunity.com/profiles/{steamId}/inventory/";
+        string referer = $"https://steamcommunity.com/profiles/{steamId}/inventory/";
 
         _logger.LogDebug("Url: {url}", url);
         _logger.LogDebug("Referer: {referer}", referer);
 
-        var headers = new List<(string key, string value)>
+        List<(string key, string value)> headers = new List<(string key, string value)>
         {
             ("Accept", "*/*"),
             ("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7"),
@@ -111,10 +115,10 @@ public class SteamAccount
             ("X-Requested-With", "XMLHttpRequest")
         };
 
-        var cookies = SteamGuardAccount.MaFile.Session!.CreateCookies();
+        CookieContainer cookies = SteamGuardAccount.MaFile.Session!.CreateCookies();
         cookies.Add(new Cookie("webTradeEligibility",
                 $"%7B%22allowed%22%3A1%2C%22allowed_at_time%22%3A0%2C%22steamguard_required_days%22%3A15%2C%22new_device_cooldown_days%22%3A0%2C%22time_checked%22%3A{GetTimeStampForInventoryRequest()}%7D")
-            { Domain = "steamcommunity.com" });
+        { Domain = "steamcommunity.com" });
 
         RestResponse response;
 
@@ -147,7 +151,7 @@ public class SteamAccount
                 response.StatusCode,
                 null, null);
 
-        var content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
+        string content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
 
         SteamInventoryResponse? steamInventoryResponse;
 
@@ -169,13 +173,13 @@ public class SteamAccount
                 content, null);
         }
 
-        var itemsDictionary = steamInventoryResponse.Assets
+        Dictionary<long, InventoryItem> itemsDictionary = steamInventoryResponse.Assets
             .ToDictionary(asset => asset.AssetId);
 
-        var descriptionsDictionary = (steamInventoryResponse.Descriptions ?? Array.Empty<ItemDescription>())
+        Dictionary<ItemId, ItemDescription> descriptionsDictionary = (steamInventoryResponse.Descriptions ?? Array.Empty<ItemDescription>())
             .ToDictionary(description => new ItemId(description.ClassId, description.InstanceId));
 
-        var inventory = new SteamInventory(itemsDictionary, descriptionsDictionary);
+        SteamInventory inventory = new SteamInventory(itemsDictionary, descriptionsDictionary);
 
         return inventory;
     }
@@ -189,7 +193,7 @@ public class SteamAccount
     {
         try
         {
-            var (sentOffers, receivedOffers) = await (GetSentAndReceivedTradeOffersAsync(timeStamp, cancellationToken));
+            (Offer[] sentOffers, Offer[] receivedOffers) = await (GetSentAndReceivedTradeOffersAsync(timeStamp, cancellationToken));
 
             return (true, sentOffers, receivedOffers);
         }
@@ -208,9 +212,9 @@ public class SteamAccount
     public async Task<(Offer[] sentOffers, Offer[] receivedOffers)> GetSentAndReceivedTradeOffersAsync(long timeStamp,
         CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
-        var response = await GetTradeOffersAsync(
+        OffersResponse response = await GetTradeOffersAsync(
             true,
             true,
             false,
@@ -228,9 +232,9 @@ public class SteamAccount
 
     public async Task<Offer[]> GetSentOffersAsync(long timeStamp, CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
-        var response = await GetTradeOffersAsync(
+        OffersResponse response = await GetTradeOffersAsync(
             true,
             true,
             false,
@@ -249,9 +253,9 @@ public class SteamAccount
 
     public async Task<Offer[]> GetReceivedOffersAsync(long timeStamp, CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
-        var response = await GetTradeOffersAsync(
+        OffersResponse response = await GetTradeOffersAsync(
             true,
             true,
             false,
@@ -277,7 +281,7 @@ public class SteamAccount
             throw new ArgumentException("getSentOffers and getReceivedOffers can't be both false");
         }
 
-        var options =
+        string options =
             $"?key={SteamApiKey}&" +
             $"get_sent_offers={Convert.ToInt32(getSentOffers)}&" +
             $"get_received_offers={Convert.ToInt32(getReceivedOffers)}&" +
@@ -289,7 +293,7 @@ public class SteamAccount
 
         _logger.LogDebug("Options: {options}", options);
 
-        var url = string.Format(Endpoints.SteamIEconServiceBaseUrl,
+        string url = string.Format(Endpoints.SteamIEconServiceBaseUrl,
             "GetTradeOffers", "v1", options);
 
         RestResponse response;
@@ -320,7 +324,7 @@ public class SteamAccount
                 response.StatusCode,
                 null, null);
 
-        var content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
+        string content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
 
 
         OffersWrapperResponse<OffersResponse>? wrapper;
@@ -341,7 +345,7 @@ public class SteamAccount
             throw;
         }
 
-        var offersResponse = wrapper.Response;
+        OffersResponse offersResponse = wrapper.Response;
 
         _logger.LogDebug("Ok");
 
@@ -358,10 +362,10 @@ public class SteamAccount
 
     public async Task AcceptTradeOfferAsync(ulong tradeOfferId, CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
         const string method = "accept";
-        
+
         await ProcessTradeOfferAsync(tradeOfferId, method, cancellationToken);
     }
 
@@ -371,7 +375,7 @@ public class SteamAccount
 
     public async Task DeclineTradeOfferAsync(ulong tradeOfferId, CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
         const string method = "decline";
 
@@ -384,7 +388,7 @@ public class SteamAccount
 
     public async Task CancelTradeOfferAsync(ulong tradeOfferId, CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
         const string method = "cancel";
 
@@ -394,22 +398,22 @@ public class SteamAccount
     private async Task ProcessTradeOfferAsync(ulong tradeOfferId, string method,
         CancellationToken cancellationToken)
     {
-        var options = $"?key={SteamApiKey}&tradeofferid={tradeOfferId}";
+        string options = $"?key={SteamApiKey}&tradeofferid={tradeOfferId}";
 
         _logger.LogDebug("Options: {options}", options);
 
-        var data = new List<(string key, string value)>
+        List<(string key, string value)> data = new List<(string key, string value)>
         {
             ("sessionid", SteamGuardAccount.MaFile.Session!.SessionId!),
             ("tradeofferid", tradeOfferId.ToString()),
             ("serverid", "1")
         };
 
-        var query = string.Join('&',
+        string query = string.Join('&',
             data.Select(t => $"{WebUtility.UrlEncode(t.key)}={WebUtility.UrlEncode(t.value)}"));
 
-        var url = $"https://steamcommunity.com/tradeoffer/{tradeOfferId}/{method}";
-        var referer = $"https://steamcommunity.com/tradeoffer/{tradeOfferId}/";
+        string url = $"https://steamcommunity.com/tradeoffer/{tradeOfferId}/{method}";
+        string referer = $"https://steamcommunity.com/tradeoffer/{tradeOfferId}/";
 
         _logger.LogDebug("Url: {url}", url);
 
@@ -479,9 +483,9 @@ public class SteamAccount
         string offerAccessToken,
         CancellationToken cancellationToken = default)
     {
-        var tradeItemsRequest = new TradeStatusRequest(itemsToGive, itemsToReceive);
+        TradeStatusRequest tradeItemsRequest = new TradeStatusRequest(itemsToGive, itemsToReceive);
 
-        var data = new List<(string key, string value)>
+        List<(string key, string value)> data = new List<(string key, string value)>
         {
             ("sessionid", SteamGuardAccount.MaFile.Session!.SessionId!),
             ("serverid", "1"),
@@ -492,14 +496,14 @@ public class SteamAccount
             ("trade_offer_create_params", $"{{\"trade_offer_access_token\":\"{offerAccessToken}\"}}")
         };
 
-        var referer = $"https://steamcommunity.com/tradeoffer/new/?partner={partnerId}";
+        string referer = $"https://steamcommunity.com/tradeoffer/new/?partner={partnerId}";
 
         RestResponse response;
 
-        var cookies = SteamGuardAccount.MaFile.Session.CreateCookies();
+        CookieContainer cookies = SteamGuardAccount.MaFile.Session.CreateCookies();
         cookies.Add(new Cookie("webTradeEligibility",
                 $"%7B%22allowed%22%3A1%2C%22allowed_at_time%22%3A0%2C%22steamguard_required_days%22%3A15%2C%22new_device_cooldown_days%22%3A0%2C%22time_checked%22%3A{GetTimeStampForInventoryRequest()}%7D")
-            { Domain = "steamcommunity.com" });
+        { Domain = "steamcommunity.com" });
 
         try
         {
@@ -531,7 +535,7 @@ public class SteamAccount
                 response.StatusCode,
                 null, null);
 
-        var content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
+        string content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
 
         NewOfferResponse? offerResponse;
 
@@ -549,7 +553,7 @@ public class SteamAccount
             throw;
         }
 
-        var tradeOfferId = offerResponse.TradeOfferId;
+        long tradeOfferId = offerResponse.TradeOfferId;
 
         if (tradeOfferId == 0)
             throw new RequestException("TradeOfferId equals zero, error", response.StatusCode, content, null);
@@ -571,9 +575,9 @@ public class SteamAccount
         int count,
         CancellationToken cancellationToken = default)
     {
-        var roundedPrice = (int)Math.Round(price * 100m);
+        int roundedPrice = (int)Math.Round(price * 100m);
 
-        var data = new Dictionary<string, string>
+        Dictionary<string, string> data = new Dictionary<string, string>
         {
             { "sessionid", SteamGuardAccount.MaFile.Session!.SessionId! },
             { "appid", appId.ToString() },
@@ -588,15 +592,15 @@ public class SteamAccount
 
         const string url = "https://steamcommunity.com/market/createbuyorder/";
 
-        var cookies = SteamGuardAccount.MaFile.Session.CreateCookies();
+        CookieContainer cookies = SteamGuardAccount.MaFile.Session.CreateCookies();
 
         cookies.Add(new Cookie("webTradeEligibility",
                 $"%7B%22allowed%22%3A1%2C%22allowed_at_time%22%3A0%2C%22steamguard_required_days%22%3A15%2C%22new_device_cooldown_days%22%3A0%2C%22time_checked%22%3A{GetTimeStampForInventoryRequest()}%7D")
-            { Domain = "steamcommunity.com" });
+        { Domain = "steamcommunity.com" });
 
-        var referer = $"https://steamcommunity.com/market/listings/{appId}/{Uri.EscapeDataString(marketHashName)}";
+        string referer = $"https://steamcommunity.com/market/listings/{appId}/{Uri.EscapeDataString(marketHashName)}";
 
-        var response = await SteamGuardAccount.RestClient.ExecutePostRequestAsync(
+        RestResponse response = await SteamGuardAccount.RestClient.ExecutePostRequestAsync(
             url,
             cookies,
             null,
@@ -613,7 +617,7 @@ public class SteamAccount
                 response.StatusCode,
                 null, null);
 
-        var content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
+        string content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
 
         NewBuyOrderResponse? orderResponse;
 
@@ -626,21 +630,21 @@ public class SteamAccount
         }
         catch (Exception e)
         {
-            var errorCreateBuyOrderResponse = JsonConvert.DeserializeObject<ErrorCreateBuyOrderResponse>(content)!;
+            ErrorCreateBuyOrderResponse errorCreateBuyOrderResponse = JsonConvert.DeserializeObject<ErrorCreateBuyOrderResponse>(content)!;
 
             if (errorCreateBuyOrderResponse.ErrorCode == 25)
                 throw new BalanceExceededException();
 
             _logger.LogError("Error deserialize NewBuyOrderResponse, content: {content}, exception: {exception}",
                 content, e.ToJson());
-            
+
             throw;
         }
 
         if (orderResponse.Success != 1)
             throw new RequestException("BuyOrder not created. Succes != 1", response.StatusCode, content, null);
 
-        var orderId = orderResponse.BuyOrderId;
+        long orderId = orderResponse.BuyOrderId;
 
         if (orderId == 0)
             throw new RequestException("BuyOrderId equals zero, error", response.StatusCode, content, null);
@@ -650,22 +654,22 @@ public class SteamAccount
 
     public async Task DeleteBuyOrderAsync(long buyOrderId, CancellationToken cancellationToken = default)
     {
-        var data = new Dictionary<string, string>
+        Dictionary<string, string> data = new Dictionary<string, string>
         {
             { "sessionid", SteamGuardAccount.MaFile.Session!.SessionId! },
             { "buy_orderid", buyOrderId.ToString() }
         };
 
-        var url = "https://steamcommunity.com/market/cancelbuyorder/";
-        var referer = "https://steamcommunity.com/market/";
+        string url = "https://steamcommunity.com/market/cancelbuyorder/";
+        string referer = "https://steamcommunity.com/market/";
 
-        var cookies = SteamGuardAccount.MaFile.Session.CreateCookies();
+        CookieContainer cookies = SteamGuardAccount.MaFile.Session.CreateCookies();
 
         cookies.Add(new Cookie("webTradeEligibility",
                 $"%7B%22allowed%22%3A1%2C%22allowed_at_time%22%3A0%2C%22steamguard_required_days%22%3A15%2C%22new_device_cooldown_days%22%3A0%2C%22time_checked%22%3A{GetTimeStampForInventoryRequest()}%7D")
-            { Domain = "steamcommunity.com" });
+        { Domain = "steamcommunity.com" });
 
-        var response = await SteamGuardAccount.RestClient.ExecutePostRequestAsync(
+        RestResponse response = await SteamGuardAccount.RestClient.ExecutePostRequestAsync(
             url,
             cookies,
             null,
@@ -682,7 +686,7 @@ public class SteamAccount
                 response.StatusCode,
                 null, null);
 
-        var content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
+        string content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
 
         DeleteBuyOrderResponse? deleteBuyOrderResponse;
 
@@ -707,9 +711,9 @@ public class SteamAccount
     public async Task<OrderListResult<SteamBuyOrder>> GetBuyOrdersAsync(int start,
         CancellationToken cancellationToken = default)
     {
-        var orders = await GetOrdersInternalAsync(start, cancellationToken);
+        MyOrdersResponse orders = await GetOrdersInternalAsync(start, cancellationToken);
 
-        var ordersBuyOrders = orders.BuyOrders;
+        SteamBuyOrder[]? ordersBuyOrders = orders.BuyOrders;
 
         // ReSharper disable once ConvertIfStatementToReturnStatement
         if (ordersBuyOrders == null)
@@ -721,17 +725,17 @@ public class SteamAccount
     private async Task<MyOrdersResponse> GetOrdersInternalAsync(int start,
         CancellationToken cancellationToken = default)
     {
-        var url = $"https://steamcommunity.com/market/mylistings?start={start}&count=100&norender=1";
+        string url = $"https://steamcommunity.com/market/mylistings?start={start}&count=100&norender=1";
 
-        var referer = "https://steamcommunity.com/market/";
+        string referer = "https://steamcommunity.com/market/";
 
-        var cookies = SteamGuardAccount.MaFile.Session!.CreateCookies();
+        CookieContainer cookies = SteamGuardAccount.MaFile.Session!.CreateCookies();
 
         cookies.Add(new Cookie("webTradeEligibility",
                 $"%7B%22allowed%22%3A1%2C%22allowed_at_time%22%3A0%2C%22steamguard_required_days%22%3A15%2C%22new_device_cooldown_days%22%3A0%2C%22time_checked%22%3A{GetTimeStampForInventoryRequest()}%7D")
-            { Domain = "steamcommunity.com" });
+        { Domain = "steamcommunity.com" });
 
-        var response = await SteamGuardAccount.RestClient.ExecuteGetRequestAsync(
+        RestResponse response = await SteamGuardAccount.RestClient.ExecuteGetRequestAsync(
             url,
             cookies,
             null,
@@ -747,7 +751,7 @@ public class SteamAccount
                 response.StatusCode,
                 null, null);
 
-        var content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
+        string content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
 
         MyOrdersResponse? myOrdersResponse;
 
@@ -778,19 +782,19 @@ public class SteamAccount
     public async Task<OffersHistoryResponse?> TryGetOffersHistoryAsync(int maxCount,
         CancellationToken cancellationToken = default) =>
         await TryHelpers.TryAsync(GetOffersHistoryAsync(maxCount, cancellationToken));
-    
+
     public async Task<OffersHistoryResponse> GetOffersHistoryAsync(int maxCount,
         CancellationToken cancellationToken = default)
     {
-        using var _ = _logger.CreateScopeForMethod(this);
+        using IDisposable? _ = _logger.CreateScopeForMethod(this);
 
         _logger.LogDebug("maxCount: {maxCount}", maxCount);
 
-        var options = $"?key={SteamApiKey}&max_trades={maxCount}&get_descriptions={true}";
+        string options = $"?key={SteamApiKey}&max_trades={maxCount}&get_descriptions={true}";
 
-        var url = string.Format(Endpoints.SteamIEconServiceBaseUrl, "GetTradeHistory", "v1", options);
+        string url = string.Format(Endpoints.SteamIEconServiceBaseUrl, "GetTradeHistory", "v1", options);
 
-        var cookies = SteamGuardAccount.MaFile.Session!.CreateCookies();
+        CookieContainer cookies = SteamGuardAccount.MaFile.Session!.CreateCookies();
 
         RestResponse response;
 
@@ -824,7 +828,7 @@ public class SteamAccount
                 response.StatusCode,
                 null, null);
 
-        var content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
+        string content = await GZipDecoding.DecodeGZipAsync(response.RawBytes, _logger, cancellationToken);
 
         OffersHistoryResponseWrapper? offersHistoryResponseWrapper;
 
@@ -848,7 +852,7 @@ public class SteamAccount
                 content, null);
         }
 
-        var result = offersHistoryResponseWrapper.Response;
+        OffersHistoryResponse result = offersHistoryResponseWrapper.Response;
 
         return result;
     }

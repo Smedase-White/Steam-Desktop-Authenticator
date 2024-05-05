@@ -1,8 +1,10 @@
 using System.Threading.Tasks;
-using Avalonia;
+
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+
 using SteamAuthentication.Models;
+
 using TradeOnSda.Data;
 using TradeOnSda.Views.ImportAccounts;
 
@@ -30,7 +32,7 @@ public partial class ImportAccountsWindow : Window
     public static async Task CreateImportAccountWindowAsync(SteamMaFile maFile, string maFileName, Window ownerWindow,
         SdaManager sdaManager)
     {
-        var window = new ImportAccountsWindow(maFile, maFileName, sdaManager);
+        ImportAccountsWindow window = new ImportAccountsWindow(maFile, maFileName, sdaManager);
 
         await window.ShowDialog(ownerWindow);
     }

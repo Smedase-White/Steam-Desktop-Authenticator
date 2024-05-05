@@ -13,7 +13,7 @@ public class TradeObservable : IObservable<TradeEvent>
 
     internal void NewEvent(TradeEvent tradeEvent)
     {
-        foreach (var observer in _observers) 
+        foreach (IObserver<TradeEvent> observer in _observers)
             observer.OnNext(tradeEvent);
     }
 
@@ -21,9 +21,9 @@ public class TradeObservable : IObservable<TradeEvent>
     {
         if (_observers.Contains(observer))
             throw new InvalidOperationException("Observer is already exists");
-        
+
         _observers.Add(observer);
-            
+
         return new TradeObservableUnsubscriber(_observers, observer);
     }
 }

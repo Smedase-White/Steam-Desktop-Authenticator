@@ -3,10 +3,15 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Input;
+
 using Avalonia.Controls;
+
 using DynamicData.Binding;
+
 using Microsoft.Extensions.Logging.Abstractions;
+
 using ReactiveUI;
+
 using SteamAuthentication.Exceptions;
 using SteamAuthentication.LogicModels;
 using SteamAuthentication.Models;
@@ -136,11 +141,11 @@ public class AccountViewModel : ViewModelBase
         SelectStrategyAsync(DefaultAccountViewCommandStrategy).GetAwaiter().GetResult();
 
         IsUnknownProxyState = true;
-        
+
         SdaWithCredentials.SdaState.WhenPropertyChanged(t => t.ProxyState)
             .Subscribe(valueWrapper =>
             {
-                var newProxyState = valueWrapper.Value;
+                ProxyState newProxyState = valueWrapper.Value;
 
                 switch (newProxyState)
                 {
@@ -161,7 +166,7 @@ public class AccountViewModel : ViewModelBase
                         break;
                 }
             });
-        
+
         FirstCommand = ReactiveCommand.CreateFromTask(async () =>
         {
             await SelectedAccountViewCommandStrategy.InvokeFirstCommandAsync();
@@ -181,11 +186,11 @@ public class AccountViewModel : ViewModelBase
         {
             try
             {
-                var confirmations = (await SdaWithCredentials.SteamGuardAccount.FetchConfirmationAsync()).Where(t =>
+                SdaConfirmation[] confirmations = (await SdaWithCredentials.SteamGuardAccount.FetchConfirmationAsync()).Where(t =>
                     t.ConfirmationType is ConfirmationType.Trade or ConfirmationType.MarketSellTransaction
                         or ConfirmationType.Recovery).ToArray();
 
-                var window = new ConfirmationsWindow(confirmations, SdaWithCredentials.SteamGuardAccount);
+                ConfirmationsWindow window = new(confirmations, SdaWithCredentials.SteamGuardAccount);
 
                 window.Show();
             }
@@ -211,7 +216,7 @@ public class AccountViewModel : ViewModelBase
         this.WhenPropertyChanged(t => t.IsContextMenuOpen)
             .Subscribe(valueWrapper =>
             {
-                var newValue = valueWrapper.Value;
+                bool newValue = valueWrapper.Value;
 
                 if (newValue)
                     AutoConfirmDelayText =
@@ -220,7 +225,7 @@ public class AccountViewModel : ViewModelBase
 
         CommitAutoConfirmDelayCommand = ReactiveCommand.CreateFromTask(async () =>
         {
-            if (!int.TryParse(AutoConfirmDelayText, out var delay))
+            if (!int.TryParse(AutoConfirmDelayText, out int delay))
             {
                 await NotificationsMessageWindow.ShowWindow("Error parse value", OwnerWindow);
                 return;
@@ -233,10 +238,10 @@ public class AccountViewModel : ViewModelBase
             }
 
             sdaWithCredentials.SdaSettings.AutoConfirmDelay = TimeSpan.FromSeconds(delay);
-            
+
             await SdaManager.SaveSettingsAsync();
 
-            var _ = Task.Run(async () =>
+            Task _ = Task.Run(async () =>
             {
                 IsSuccessCommitAutoConfirmDelay = true;
                 await Task.Delay(TimeSpan.FromSeconds(1));
@@ -324,13 +329,13 @@ public class DefaultAccountViewCommandStrategy : IAccountViewCommandStrategy
     {
         try
         {
-            var confirmations = await _accountViewModel.SdaWithCredentials.SteamGuardAccount.FetchConfirmationAsync();
+            SdaConfirmation[] confirmations = await _accountViewModel.SdaWithCredentials.SteamGuardAccount.FetchConfirmationAsync();
 
             confirmations = confirmations.Where(t =>
                 t.ConfirmationType is ConfirmationType.Trade or ConfirmationType.MarketSellTransaction or ConfirmationType.WebKey
                     or ConfirmationType.Recovery).ToArray();
 
-            var window = new ConfirmationsWindow(confirmations, _accountViewModel.SdaWithCredentials.SteamGuardAccount);
+            ConfirmationsWindow window = new(confirmations, _accountViewModel.SdaWithCredentials.SteamGuardAccount);
 
             window.Show();
         }
@@ -394,8 +399,8 @@ public class EditProxyAccountViewCommandStrategy : ViewModelBase, IAccountViewCo
         _accountViewModel.SdaWithCredentials.Credentials.ProxyString = TextBoxText;
         _accountViewModel.SdaWithCredentials.Credentials.Proxy = proxy;
 
-        var oldSda = _accountViewModel.SdaWithCredentials.SteamGuardAccount;
-        var newSteamTime = new SimpleSteamTime();
+        SteamGuardAccount oldSda = _accountViewModel.SdaWithCredentials.SteamGuardAccount;
+        SimpleSteamTime newSteamTime = new();
 
         _accountViewModel.SdaWithCredentials.SteamGuardAccount = new SteamGuardAccount(oldSda.MaFile,
             new SteamRestClient(proxy), newSteamTime, NullLogger<SteamGuardAccount>.Instance);

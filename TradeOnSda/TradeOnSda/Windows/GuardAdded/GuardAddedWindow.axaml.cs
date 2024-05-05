@@ -1,8 +1,10 @@
 using System.Threading.Tasks;
-using Avalonia;
+
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+
 using SteamAuthentication.LogicModels;
+
 using TradeOnSda.Data;
 
 namespace TradeOnSda.Windows.GuardAdded;

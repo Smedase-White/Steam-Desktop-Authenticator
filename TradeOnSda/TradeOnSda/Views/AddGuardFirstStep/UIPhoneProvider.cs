@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+
 using SteamAuthentication.GuardLinking;
 
 namespace TradeOnSda.Views.AddGuardFirstStep;
@@ -13,11 +14,11 @@ public class UIPhoneProvider : IPhoneNumberProvider
     {
         _viewModel = viewModel;
     }
-    
+
     public async Task<string> GetPhoneNumberAsync(CancellationToken cancellationToken)
     {
-        var phoneNumber = await _viewModel.AskUserAsync("Enter a new phone number for steam account", "+XXXXXXXXXXX");
-        
+        string phoneNumber = await _viewModel.AskUserAsync("Enter a new phone number for steam account", "+XXXXXXXXXXX");
+
         _viewModel.LastPhoneNumber = phoneNumber;
 
         return phoneNumber;
